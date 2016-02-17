@@ -402,7 +402,6 @@ NETS = {
     },
 
     'mobilenet_v1_0p25_128': {
-        'exclude': False,
         'url': MODELS_URL_BASE + 'mobilenet_v1_0.25_128_2017_06_14.tar.gz',
         'model': mobilenet_v1_0p25_128,
         'arg_scope': nets.mobilenet_v1.mobilenet_v1_arg_scope,

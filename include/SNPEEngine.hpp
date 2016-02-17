@@ -13,14 +13,16 @@ namespace SNPE {
 
 class SNPEEngine
 {
-    size_t                           batchSize;
-    zdl::DlSystem::Runtime_t         runtime;
-    zdl::DlSystem::TensorShape       tensorShape;
-    std::unique_ptr<zdl::SNPE::SNPE> snpe;
+    std::vector<float>                      output;
+    zdl::DlSystem::TensorMap                outputTensorMap;
+    zdl::DlSystem::Runtime_t                runtime;
+    zdl::DlSystem::TensorShape              inputShape;
+    std::unique_ptr<zdl::SNPE::SNPE>        snpe;
+    std::unique_ptr<zdl::DlSystem::ITensor> inputTensor;
 
 public:
     SNPEEngine(const std::string&, const std::string&);
-    std::vector<float> execute(const std::string&);
+    std::vector<float> execute(pybind11::array_t<float, pybind11::array::c_style> input);
     double measureLatency(pybind11::array_t<float, pybind11::array::c_style> input, int);
 };
 } // namespace SNPE

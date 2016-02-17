@@ -21,6 +21,7 @@ std::unique_ptr<zdl::SNPE::SNPE> setBuilderOptions(std::unique_ptr<zdl::DlContai
     zdl::SNPE::SNPEBuilder snpeBuilder(container.get());
     snpe = snpeBuilder.setOutputLayers({})
        .setRuntimeProcessor(runtime)
+       .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::HIGH_PERFORMANCE)
        .build();
     return snpe;
 }

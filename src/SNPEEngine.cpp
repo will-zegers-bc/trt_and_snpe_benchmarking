@@ -45,43 +45,31 @@ namespace SNPE {
 SNPEEngine::SNPEEngine(const std::string& dlc, const std::string& runtimeString)
     : runtime(getRuntime(runtimeString))
 {
-
     std::ifstream dlcFileCheck(dlc);
     if (!dlcFileCheck)
     {
-        std::cerr << "DLC file not found" << std::endl;
         throw std::runtime_error("DLC file not found");
     }
     std::unique_ptr<zdl::DlContainer::IDlContainer> container = loadContainerFromFile(dlc);
     if (container == nullptr)
     {
-        std::cerr << "Error while opening the container file." << std::endl;
         throw std::runtime_error("Error while opening the container file.");
     }
     snpe = setBuilderOptions(container, runtime);
     if (snpe == nullptr)
     {
-        std::cerr << "Error while building SNPE object." << std::endl;
         throw std::runtime_error("Error while building SNPE object.");
     }
-    tensorShape = snpe->getInputDimensions();
-    batchSize = tensorShape.getDimensions()[0];
+    const auto &strList_opt = snpe->getInputTensorNames();
+    const auto &strList = *strList_opt;
+
+    inputShape = snpe->getInputDimensions(strList.at(0));
+    inputTensor = zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape);
 }
 
-std::vector<float> SNPEEngine::execute(const std::string& inputFile)
+std::vector<float> SNPEEngine::execute(pybind11::array_t<float, pybind11::array::c_style> loadedFile)
 {
-    std::vector<float> output;
-    zdl::DlSystem::TensorMap outputTensorMap;
-
-    std::ifstream inputFileCheck(inputFile);
-    if (!inputFileCheck)
-    {
-        std::cerr << "Input .raw file not found" << std::endl;
-        throw std::runtime_error("Input file not found");
-    }
-
-    std::unique_ptr<zdl::DlSystem::ITensor> inputTensor = loadInputTensor(snpe, inputFile);
-
+    std::copy(loadedFile.data(), loadedFile.data() + loadedFile.size(), inputTensor->begin());
     if (snpe->execute(inputTensor.get(), outputTensorMap))
     {
         zdl::DlSystem::StringList outputTensorNames = snpe->getOutputTensorNames();
@@ -92,29 +80,18 @@ std::vector<float> SNPEEngine::execute(const std::string& inputFile)
     }
     else
     {
-        throw std::runtime_error("Bad SNPE runtime string");
+        throw std::runtime_error("Something went wrong when running inference");
     }
     return output;
 }
 
 double SNPEEngine::measureLatency(pybind11::array_t<float, pybind11::array::c_style> loadedFile, int numRuns)
 {
-    std::vector<float> output;
-    zdl::DlSystem::TensorMap outputTensorMap;
-
-    const auto &strList_opt = snpe->getInputTensorNames();
-    const auto &strList = *strList_opt;
-    const auto &inputDims_opt = snpe->getInputDimensions(strList.at(0));
-    const auto &inputShape = *inputDims_opt;
-
-    std::unique_ptr<zdl::DlSystem::ITensor> inputTensor =
-//        zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape);
-        zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape, reinterpret_cast<const unsigned char *>(loadedFile.data()), loadedFile.size() * sizeof(float));
-
     double avgTime = 0;
     for (int i = 0; i < numRuns; ++i)
     {
         auto t0 = std::chrono::steady_clock::now();
+        std::copy(loadedFile.data(), loadedFile.data() + loadedFile.size(), inputTensor->begin());
 
         if (snpe->execute(inputTensor.get(), outputTensorMap))
         {
@@ -138,53 +115,3 @@ double SNPEEngine::measureLatency(pybind11::array_t<float, pybind11::array::c_st
     return avgTime / numRuns;
 }
 } // namespace SNPE
-
-int main(int argc, char** argv)
-{
-    static std::string dlc = "";
-    const char* inputFile = "";
-    static std::string runtime = "cpu";
-
-    int opt = 0;
-    while ((opt = getopt(argc, argv, "hi:d:o:r")) != -1)
-    {
-        switch (opt)
-        {
-            case 'h':
-                std::cout
-                        << "\nDESCRIPTION:\n"
-                        << "------------\n"
-                        << "Example application demonstrating how to load and execute a neural network\n"
-                        << "using the SNPE C++ API.\n"
-                        << "\n\n"
-                        << "REQUIRED ARGUMENTS:\n"
-                        << "-------------------\n"
-                        << "  -d  <FILE>   Path to the DL container containing the network.\n"
-                        << "  -i  <FILE>   Path to a file listing the inputs for the network.\n"
-                        << "\n"
-                        << "OPTIONAL ARGUMENTS:\n"
-                        << "-------------------\n"
-                        << "  -r  <RUNTIME> The runtime to be used [gpu, dsp, cpu] (cpu is default). \n"
-                        << std::endl;
-
-                std::exit(SUCCESS);
-            case 'i':
-                inputFile = optarg;
-                break;
-            case 'd':
-                dlc = optarg;
-                break;
-            case 'r':
-                runtime = optarg;
-                break;
-            default:
-                std::cout << "Invalid parameter specified. Please run snpe-sample with the -h flag to see required arguments" << std::endl;
-                std::exit(FAILURE);
-        }
-    }
-
-    SNPE::SNPEEngine snpe(dlc, runtime);
-    auto output = snpe.execute(inputFile);
-
-    return SUCCESS;
-}
