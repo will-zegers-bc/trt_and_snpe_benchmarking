@@ -5,7 +5,6 @@
 
 #include <pybind11/numpy.h>
 
-#include "DiagLog/IDiagLog.hpp"
 #include "DlContainer/IDlContainer.hpp"
 #include "SNPE/SNPEFactory.hpp"
 #include "SNPE/SNPE.hpp"
@@ -14,13 +13,10 @@ namespace SNPE {
 
 class SNPEEngine
 {
-    std::vector<float>                              output;
-    zdl::DlSystem::TensorMap                        outputTensorMap;
-    zdl::DlSystem::Runtime_t                        runtime;
-    zdl::DlSystem::TensorShape                      inputShape;
-    std::unique_ptr<zdl::SNPE::SNPE>                snpe;
-    std::unique_ptr<zdl::DlSystem::ITensor>         inputTensor;
-    std::unique_ptr<zdl::DlContainer::IDlContainer> container;
+    std::vector<float>                      output;
+    zdl::DlSystem::TensorMap                outputTensorMap;
+    std::unique_ptr<zdl::SNPE::SNPE>        snpe;
+    std::unique_ptr<zdl::DlSystem::ITensor> inputTensor;
 
 public:
     SNPEEngine(const std::string&, const std::string&);

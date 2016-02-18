@@ -24,27 +24,29 @@ struct NetConfig
   std::string planPath;
   std::string inputNodeName;
   std::string outputNodeName;
+
   int inputHeight;
   int inputWidth;
   int inputChannels;
   int numOutputCategories;
   int maxBatchSize;
+
   NetConfig(std::string, std::string, std::string, int, int, int, int, int);
 };
 
 class TRTEngine
 {
-  int inputBindingIndex;
-  int outputBindingIndex;
-  int numOutputCategories;
+  int    inputBindingIndex;
+  int    outputBindingIndex;
+  int    numOutputCategories;
+  float* inputDevice;
+  float* outputDevice;
+  float* bindings[2];
+  float* output;
   size_t inputSize;
-  float * inputDevice;
-  float * outputDevice;
-  float * bindings[2];
-  float * output;
 
-  IRuntime* runtime;
-  ICudaEngine* engine;
+  IRuntime*          runtime;
+  ICudaEngine*       engine;
   IExecutionContext* context;
 
 public:

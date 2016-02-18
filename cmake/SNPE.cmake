@@ -11,22 +11,14 @@ endif()
 
 set(SNPE_SOURCE_FILES src/CheckRuntime.cpp
                       src/LoadContainer.cpp
-                      src/LoadInputTensor.cpp
-                      src/NV21Load.cpp
-                      src/PreprocessInput.cpp
                       src/SetBuilderOptions.cpp
                       src/SNPEEngine.cpp
-                      src/Util.cpp
 )
 
 set(SNPE_HEADER_FILES include/CheckRuntime.hpp
                       include/LoadContainer.hpp
-                      include/LoadInputTensor.hpp
-                      include/NV21Load.hpp
-                      include/PreprocessInput.hpp
                       include/SetBuilderOptions.hpp
                       include/SNPEEngine.hpp
-                      include/Util.hpp
 )
 set(SNPE_WRAPPER_FILES src/PySNPE.cpp)
 

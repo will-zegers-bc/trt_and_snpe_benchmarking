@@ -35,7 +35,7 @@ def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_ima
         t0 = time.time()
         engine.execute(image)
         times[i] = time.time() - t0
-    return 1 / np.mean(times[1:]) # don't include first run
+    return 1 / np.mean(times[1:])  # don't include first run
 
 
 def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TEST_IMAGE_PATH):
@@ -48,7 +48,7 @@ def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TES
         t0 = time.time()
         engine.execute(image)
         times[i] = time.time() - t0
-    return 1 / np.mean(times[1:])
+    return 1 / np.mean(times[1:])  # don't include first run
 
 
 def test_tf_average_throughput(net_meta, num_runs=50, test_image=TEST_IMAGE_PATH):
@@ -56,7 +56,6 @@ def test_tf_average_throughput(net_meta, num_runs=50, test_image=TEST_IMAGE_PATH
         shape = net_meta['input_width'], net_meta['input_height']
         image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
-        # run network
         times = [0.] * (num_runs+1)
         for i in range(num_runs + 1):
             t0 = time.time()

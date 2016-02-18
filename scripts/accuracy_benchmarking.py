@@ -65,7 +65,7 @@ def load_test_set_data(net_meta, files, batch_size):
 
 def run_snpe_accuracy_test(net_meta, files, batch_size, runtime):
     if not net_meta['snpe_supported'][runtime]:
-        return float('nan','nan','nan')
+        return None
 
     predictions = []
     images = load_test_set_data(net_meta, files, 1)
@@ -156,12 +156,15 @@ if __name__ == '__main__':
                            if args.net_type == 'trt' else
                            run_snpe_accuracy_test(net_meta, files, args.batch_size, args.runtime))
 
-            accuracy = np.equal(predictions, labels).mean()
-            precision, recall = calculate_class_precision_and_recall(predictions, labels, net_meta['num_classes'])
+            if predictions is None:
+                csv_result = '{},nan,nan,nan\n'.format(net_name)
+            else:
+                accuracy = np.equal(predictions, labels).mean()
+                precision, recall = calculate_class_precision_and_recall(predictions, labels, net_meta['num_classes'])
 
-            avg_precision = precision[np.unique(labels)].mean()
-            avg_recall = recall[np.unique(labels)].mean()
+                avg_precision = precision[np.unique(labels)].mean()
+                avg_recall = recall[np.unique(labels)].mean()
 
-            csv_result = '{},{},{},{}\n'.format(net_name, accuracy, avg_precision, avg_recall)
+                csv_result = '{},{},{},{}\n'.format(net_name, accuracy, avg_precision, avg_recall)
             output.write(csv_result)
             logging.info(csv_result)
