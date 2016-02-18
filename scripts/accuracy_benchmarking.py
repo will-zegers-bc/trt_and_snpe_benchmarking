@@ -64,6 +64,20 @@ def load_test_set_data(net_meta, files, batch_size):
 
 
 def run_snpe_accuracy_test(net_meta, files, batch_size, runtime):
+    if not net_meta['snpe_supported'][runtime]:
+        return float('nan','nan','nan')
+
+    predictions = []
+    images = load_test_set_data(net_meta, files, 1)
+    engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime)
+              if runtime == 'dsp' else
+              snpe_engine_builder(net_meta['dlc_filename'], runtime))
+    for i, batch in enumerate(images):
+        img = batch[0]
+        output = np.array(engine.execute(img)).reshape(1, -1)
+        predictions.extend(output.argmax(axis=1))
+
+    return predictions
 
 
 def run_trt_accuracy_test(net_meta, files, batch_size, data_type):
@@ -138,7 +152,7 @@ if __name__ == '__main__':
             logging.info("Testing %s" % net_name)
             predictions = (run_tf_accuracy_test(net_meta, files, args.batch_size)
                            if args.net_type == 'tf' else
-                           run_trt_accuracy_test(net_meta, files, args.batch_size, args.data_type))
+                           run_trt_accuracy_test(net_meta, files, args.batch_size, args.data_type)
                            if args.net_type == 'trt' else
                            run_snpe_accuracy_test(net_meta, files, args.batch_size, args.runtime))
 

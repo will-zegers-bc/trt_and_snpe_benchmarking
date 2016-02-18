@@ -12,6 +12,5 @@ PYBIND11_MODULE(PySNPE, m)
 
     pybind11::class_<SNPE::SNPEEngine>(m, "InferenceEngine")
         .def(pybind11::init<const std::string&, const std::string&>())
-        .def("execute", &SNPE::SNPEEngine::execute)
-        .def("measure_latency", &SNPE::SNPEEngine::measureLatency);
+        .def("execute", &SNPE::SNPEEngine::execute);
 }

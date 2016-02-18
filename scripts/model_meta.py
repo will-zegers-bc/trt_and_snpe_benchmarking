@@ -51,6 +51,7 @@ def reverse_label_map_lookup(num_classes, label):
     return 1000
 
 def preprocess_vgg(image):
+    return 2.0 * (np.array(image, dtype=np.float32) / 255.0 - 0.5)
     return np.array(image, dtype=np.float32) - np.array([123.68, 116.78, 103.94], dtype=np.float32)
 
 def postprocess_vgg(output):
@@ -106,6 +107,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'vgg_16_quantized.dlc',
         'uff_filename': UFFS_DIR + 'vgg_16.uff',
         'plan_filename': PLANS_DIR + '{}/vgg_16.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'vgg_19': {
@@ -127,6 +129,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'vgg_19_quantized.dlc',
         'uff_filename': UFFS_DIR + 'vgg_19.uff',
         'plan_filename': PLANS_DIR + '{}/vgg_19.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'inception_v1': {
@@ -148,6 +151,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'inception_v1_quantized.dlc',
         'uff_filename': UFFS_DIR + 'inception_v1.uff',
         'plan_filename': PLANS_DIR + '{}/inception_v1.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'inception_v2': {
@@ -170,6 +174,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'inception_v2_quantized.dlc',
         'uff_filename': UFFS_DIR + 'inception_v2.uff',
         'plan_filename': PLANS_DIR + '{}/inception_v2.plan',
+        'snpe_supported': {'cpu': False, 'gpu': False, 'dsp': False},
     },
 
     'inception_v3': {
@@ -191,6 +196,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'inception_v3_quantized.dlc',
         'uff_filename': UFFS_DIR + 'inception_v3.uff',
         'plan_filename': PLANS_DIR + '{}/inception_v3.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'inception_v4': {
@@ -212,6 +218,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'inception_v4_quantized.dlc',
         'uff_filename': UFFS_DIR + 'inception_v4.uff',
         'plan_filename': PLANS_DIR + '{}/inception_v4.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
     
     'inception_resnet_v2': {
@@ -233,6 +240,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'inception_resnet_v2_quantized.dlc',
         'uff_filename': UFFS_DIR + 'inception_resnet_v2.uff',
         'plan_filename': PLANS_DIR + '{}/inception_resnet_v2.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'resnet_v1_50': {
@@ -253,6 +261,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'resnet_v1_50_quantized.dlc',
         'uff_filename': UFFS_DIR + 'resnet_v1_50.uff',
         'plan_filename': PLANS_DIR + '{}/resnet_v1_50.plan',
+        'snpe_supported': {'cpu': True, 'gpu': False, 'dsp': False},
     },
 
     'resnet_v1_101': {
@@ -273,6 +282,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'resnet_v1_101_quantized.dlc',
         'uff_filename': UFFS_DIR + 'resnet_v1_101.uff',
         'plan_filename': PLANS_DIR + '{}/resnet_v1_101.plan',
+        'snpe_supported': {'cpu': True, 'gpu': False, 'dsp': False},
     },
 
     'resnet_v1_152': {
@@ -293,6 +303,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'resnet_v1_152_quantized.dlc',
         'uff_filename': UFFS_DIR + 'resnet_v1_152.uff',
         'plan_filename': PLANS_DIR + '{}/resnet_v1_152.plan',
+        'snpe_supported': {'cpu': True, 'gpu': False, 'dsp': False},
     },
 
     'resnet_v2_50': {
@@ -313,6 +324,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'resnet_v2_50_quantized.dlc',
         'uff_filename': UFFS_DIR + 'resnet_v2_50.uff',
         'plan_filename': PLANS_DIR + '{}/resnet_v2_50.plan',
+        'snpe_supported': {'cpu': True, 'gpu': False, 'dsp': False},
     },
 
     'resnet_v2_101': {
@@ -333,6 +345,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'resnet_v2_101_quantized.dlc',
         'uff_filename': UFFS_DIR + 'resnet_v2_101.uff',
         'plan_filename': PLANS_DIR + '{}/resnet_v2_101.plan',
+        'snpe_supported': {'cpu': True, 'gpu': False, 'dsp': False},
     },
 
     'resnet_v2_152': {
@@ -353,6 +366,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'resnet_v2_152_quantized.dlc',
         'uff_filename': UFFS_DIR + 'resnet_v2_152.uff',
         'plan_filename': PLANS_DIR + '{}/resnet_v2_152.plan',
+        'snpe_supported': {'cpu': True, 'gpu': False, 'dsp': False},
     },
 
     #'resnet_v2_200': {
@@ -378,6 +392,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'mobilenet_v1_1p0_224_quantized.dlc',
         'uff_filename': UFFS_DIR + 'mobilenet_v1_1p0_224.uff',
         'plan_filename': PLANS_DIR + '{}/mobilenet_v1_1p0_224.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'mobilenet_v1_0p5_160': {
@@ -399,6 +414,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'mobilenet_v1_0p5_160_quantized.dlc',
         'uff_filename': UFFS_DIR + 'mobilenet_v1_0p5_160.uff',
         'plan_filename': PLANS_DIR + '{}/mobilenet_v1_0p5_160.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'mobilenet_v1_0p25_128': {
@@ -420,6 +436,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'mobilenet_v1_0p25_128_quantized.dlc',
         'uff_filename': UFFS_DIR + 'mobilenet_v1_0p25_128.uff',
         'plan_filename': PLANS_DIR + '{}/mobilenet_v1_0p25_128.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'mobilenet_v2_1p0_224': {
@@ -441,6 +458,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'mobilenet_v2_1p0_224_quantized.dlc',
         'uff_filename': UFFS_DIR + 'mobilenet_v2_1p0_224.uff',
         'plan_filename': PLANS_DIR + '{}/mobilenet_v2_1p0_224.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 
     'mobilenet_v2_1p4_224': {
@@ -462,6 +480,7 @@ NETS = {
         'quantized_dlc_filename': DLCS_DIR + 'mobilenet_v2_1p4_224_quantized.dlc',
         'uff_filename': UFFS_DIR + 'mobilenet_v2_1p4_224.uff',
         'plan_filename': PLANS_DIR + '{}/mobilenet_v2_1p4_224.plan',
+        'snpe_supported': {'cpu': True, 'gpu': True, 'dsp': True},
     },
 }
 

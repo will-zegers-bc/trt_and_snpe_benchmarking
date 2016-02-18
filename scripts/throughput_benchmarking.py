@@ -20,14 +20,22 @@ TEST_IMAGE_PATH=os.path.join(SAMPLES_DIR, 'gordon_setter.jpg')
 
 
 def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_image=TEST_IMAGE_PATH):
+    if not net_meta['snpe_supported'][runtime]:
+        return float('nan')
+
     shape = net_meta['input_width'], net_meta['input_height']
     image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
     engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime)
               if runtime == 'dsp' else
               snpe_engine_builder(net_meta['dlc_filename'], runtime))
-    avg_latency = engine.measure_latency(test_image, num_runs)
-    return 1 / avg_latency
+
+    times = [0.] * (num_runs+1)
+    for i in range(num_runs + 1):
+        t0 = time.time()
+        engine.execute(image)
+        times[i] = time.time() - t0
+    return 1 / np.mean(times[1:]) # don't include first run
 
 
 def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TEST_IMAGE_PATH):
@@ -76,7 +84,6 @@ if __name__ == '__main__':
     with output_manager(args.output_file) as output:
         output.write("net_name,throughput\n")
         for net_name, net_meta in NETS.items():
-#        for net_name, net_meta in [('inception_v2', NETS['inception_v2'])]:
             if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
                 logging.info("Skipping {}".format(net_name))
                 continue
