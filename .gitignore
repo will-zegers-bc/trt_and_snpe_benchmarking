@@ -1,0 +1,11 @@
+*.swp
+*.pyc
+
+build/
+data/checkpoints
+data/frozen_graphs
+data/images
+data/throughput
+data/memory
+data/accuracy
+venv/
