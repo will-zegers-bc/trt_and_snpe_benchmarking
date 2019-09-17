@@ -5,7 +5,7 @@ import urllib
 import tensorflow as tf
 import tensorflow.contrib.slim as tf_slim
 
-from benchmarking_common import IMAGE_DATA_DIR, ANNOTATION_DIR
+from benchmarking_common import IMAGE_BASE_DIR, IMAGE_DATA_DIR, ANNOTATION_DIR
 from convert_relu6 import convertRelu6
 from model_meta import CHECKPOINT_DIR, FROZEN_GRAPHS_DIR, NETS
 

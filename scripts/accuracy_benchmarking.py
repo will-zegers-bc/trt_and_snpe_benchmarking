@@ -32,8 +32,8 @@ def _collect_test_files(image_dir, annotation_dir, num_classes):
     logging.info("Collecting test files")
 
     file_paths, labels = [], []
-    for data_dir, label_dir in zip(os.listdir(image_dir), os.listdir(annotation_dir)):
-        assert data_dir == label_dir
+    for data_dir, label_dir in zip(map(sorted, map(os.listdir, (image_dir, annotation_dir)))):
+        assert data_dir == label_dir, "Data/label mismatch: data_dir: %s, label_dir: %s" % (data_dir, label_dir)
         data_path = os.path.join(image_dir, data_dir)
         label_path = os.path.join(annotation_dir, label_dir)
 
@@ -59,7 +59,7 @@ def load_test_set_files_and_labels(images_path, labels_path, size, num_classes, 
 
 def load_test_set_data(net_meta, files, batch_size):
     shape = net_meta['input_width'], net_meta['input_height']
-    image_processor = functools.partial(process_input_file, shape, net_meta['preprocess_fn'])
+    image_processor = functools.partial(preprocess_input_file, shape, net_meta['preprocess_fn'])
     image_data = (map(image_processor, [img for img in files[i:i+batch_size]])
                   for i in range(0, len(files), batch_size))
 
@@ -133,6 +133,7 @@ if __name__ == '__main__':
                                                            args.test_set_size,
                                                            net_meta['num_classes'])
 
+            logging.info("Testing %s" % net_name)
             predictions = (run_tf_accuracy_test(net_meta, files, args.batch_size)
                            if args.net_type == 'tf' else
                            run_trt_accuracy_test(net_meta, args.data_type, files, args.batch_size))
@@ -142,4 +143,7 @@ if __name__ == '__main__':
 
             avg_precision = precision[np.unique(labels)].mean()
             avg_recall = recall[np.unique(labels)].mean()
-            output.write('{},{},{},{}\n'.format(net_name, accuracy, avg_precision, avg_recall))
+
+            csv_result = '{},{},{},{}\n'.format(net_name, accuracy, avg_precision, avg_recall)
+            output.write(csv_result)
+            logging.info(csv_result)

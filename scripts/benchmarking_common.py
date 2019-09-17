@@ -4,9 +4,10 @@ import sys
 
 import cv2
 import tensorflow as tf
-
-from model_meta import PLAN_DIR
-from tensor_rt import InferenceEngine, NetConfig
+try:
+    from tensor_rt import InferenceEngine, NetConfig
+except ImportError:
+    print("[-] No TenorRT module. TRT functionality will not be supported")
 
 IMAGE_BASE_DIR='data/images/'
 IMAGE_DATA_DIR=IMAGE_BASE_DIR+'Images/'

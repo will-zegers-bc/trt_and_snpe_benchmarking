@@ -12,26 +12,15 @@ import tensorflow as tf
 
 from benchmarking_common import (output_manager,
                                  preprocess_input_file,
-                                 tf_session_manager)
+                                 tf_session_manager,
+                                 trt_engine_builder)
 from model_meta import CHECKPOINT_DIR, FROZEN_GRAPHS_DIR, NETS, PLAN_DIR
-from tensor_rt import InferenceEngine, NetConfig
 
 TEST_IMAGE_PATH='data/images/gordon_setter.jpg'
 
 
 def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TEST_IMAGE_PATH):
-    plan_dir = os.path.join(PLAN_DIR, data_type)
-    net_config = NetConfig(
-        plan_path=os.path.join(plan_dir, net_meta['plan_filename']),
-        input_node_name=net_meta['input_name'],
-        output_node_name=net_meta['output_names'][0],
-        preprocess_fn_name=net_meta['preprocess_fn'].__name__,
-        input_height=net_meta['input_height'],
-        input_width=net_meta['input_width'],
-        num_output_categories=net_meta['num_classes'],
-        max_batch_size=1)
-    engine = InferenceEngine(net_config)
-
+    engine = trt_engine_builder(net_config, data_type)
     avg_latency = engine.measure_throughput(test_image, num_runs)
     return 1 / avg_latency
 
@@ -40,7 +29,7 @@ def test_average_throughput(net_meta, num_runs=50, test_image=TEST_IMAGE_PATH):
     with tf_session_manager(net_meta) as (tf_sess, tf_input, tf_output):
 
         shape = net_meta['input_width'], net_meta['input_height']
-        image = process_input_file(shape, net_meta['preprocess_fn'], test_image)
+        image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
         # run network
         times = [0.] * (num_runs+1)
@@ -78,4 +67,6 @@ if __name__ == '__main__':
                               if args.net_type == 'tf' else
                               test_trt_average_throughput(net_meta, args.data_type, args.num_runs))
     
-            output.write('{},{}\n'.format(net_name, avg_throughput))
+            csv_result = '{},{}\n'.format(net_name, avg_throughput)
+            output.write(csv_result)
+            logging.info(csv_result)

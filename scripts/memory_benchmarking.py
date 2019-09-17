@@ -14,10 +14,10 @@ import numpy as np
 import tensorflow as tf
 
 from benchmarking_common import (output_manager,
-                                 process_input_file,
-                                 tf_session_manager)
+                                 preprocess_input_file,
+                                 tf_session_manager,
+                                 trt_engine_builder)
 from model_meta import NETS, FROZEN_GRAPHS_DIR, CHECKPOINT_DIR, PLAN_DIR
-from tensor_rt import InferenceEngine, NetConfig
 
 TEST_IMAGE_PATH='data/images/gordon_setter.jpg'
 
@@ -49,18 +49,7 @@ def record_memory_usage(pid, rate_hz=5):
 
 
 def spin_trt_inferencing(net_meta, data_type, num_runs, test_image=TEST_IMAGE_PATH):
-    plan_dir = os.path.join(PLAN_DIR, data_type)
-    net_config = NetConfig(
-        plan_path=os.path.join(plan_dir, net_meta['plan_filename']),
-        input_node_name=net_meta['input_name'],
-        output_node_name=net_meta['output_names'][0],
-        preprocess_fn_name=net_meta['preprocess_fn'].__name__,
-        input_height=net_meta['input_height'],
-        input_width=net_meta['input_width'],
-        num_output_categories=net_meta['num_classes'],
-        max_batch_size=1)
-    engine = InferenceEngine(net_config)
-
+    engine = trt_engine_builder(net_config, data_type)
     for i in range(num_runs):
         _ = engine.execute(test_image)
 
@@ -69,7 +58,7 @@ def spin_tf_inferencing(net_meta, num_runs=20, test_image=TEST_IMAGE_PATH):
     with tf_session_manager(net_meta) as (tf_sess, tf_input, tf_output):
 
         shape = net_meta['input_width'], net_meta['input_height']
-        image = process_input_file(shape, net_meta['preprocess_fn'], test_image)
+        image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
         # run network
         for i in range(num_runs):
@@ -99,6 +88,7 @@ if __name__ == '__main__':
                 logging.info('Skipping %s' % net_name)
                 continue
         
+            logging.info("Testing %s" % net_name)
             p = (Process(target=spin_tf_inferencing, args=(net_meta, args.num_runs))
                  if args.net_type == 'tf' else 
                  Process(target=spin_trt_inferencing, args=(net_meta, args.data_type, args.num_runs)))
@@ -107,4 +97,6 @@ if __name__ == '__main__':
             uss, pss, rss = record_memory_usage(p.pid)
             
             uss_max, pss_max, rss_max = map(np.max, [uss, pss, rss])
-            output.write('{},{},{},{}\n'.format(net_name,uss_max,pss_max,rss_max))
+            csv_result = '{},{},{},{}\n'.format(net_name,uss_max,pss_max,rss_max)
+            output.write(csv_result)
+            logging.info(csv_result)
