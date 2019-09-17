@@ -13,7 +13,6 @@
 #include <NvInfer.h>
 
 
-using namespace std;
 using namespace nvinfer1;
 
 
@@ -23,18 +22,17 @@ typedef void (*preprocess_fn_t)(float *input, size_t channels, size_t height, si
 
 struct NetConfig
 {
-  string planPath;
-  string inputNodeName;
-  string outputNodeName;
-  string preprocessFnName;
+  std::string planPath;
+  std::string inputNodeName;
+  std::string outputNodeName;
+  std::string preprocessFnName;
   int inputHeight;
   int inputWidth;
   int numOutputCategories;
   int maxBatchSize;
   
-  NetConfig(string, string, string, string, int, int, int, int);
+  NetConfig(std::string, std::string, std::string, std::string, int, int, int, int);
 
-  string toString();
   preprocess_fn_t preprocessFn() const;
 };
 
@@ -52,17 +50,15 @@ class InferenceEngine
   ICudaEngine* engine;
   IExecutionContext* context;
 
-  float* prepareInput(string);
-
 public:
   InferenceEngine(const NetConfig&);
   ~InferenceEngine();
 
-  std::vector<float> execute(string);
+  std::vector<float> execute(std::string);
+  double measureThroughput(std::string, int);
 };
 
 float * imageToTensor(const cv::Mat &);
 void preprocessVgg(float*, size_t, size_t, size_t);
 void preprocessInception(float*, size_t, size_t, size_t);
-int execute(const NetConfig &, string);
 } // namespace TensorRT

@@ -2,7 +2,7 @@
  * Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
  * Full license terms provided in LICENSE.md file.
  */
-
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,8 +15,8 @@
 #include "trt_inference_engine.hpp"
 
 
-using namespace std;
 using namespace nvinfer1;
+
 
 namespace TensorRT
 {
@@ -27,14 +27,14 @@ class Logger : public ILogger
 {
   void log(Severity severity, const char * msg) override
   {
-      cout << msg << endl;
+      std::cout << msg << std::endl;
   }
 } gLogger;
 
-NetConfig::NetConfig(string planPath,
-                     string inputNodeName,
-                     string outputNodeName,
-                     string preprocessFnName,
+NetConfig::NetConfig(std::string planPath,
+                     std::string inputNodeName,
+                     std::string outputNodeName,
+                     std::string preprocessFnName,
                      int inputHeight,
                      int inputWidth,
                      int numOutputCategories,
@@ -56,7 +56,7 @@ preprocess_fn_t NetConfig::preprocessFn() const {
   else if (preprocessFnName == "preprocess_inception")
      return preprocessInception;
   else
-     throw runtime_error("Invalid preprocessing function name.");
+     throw std::runtime_error("Invalid preprocessing function name.");
 }
 
 float *imageToTensor(const cv::Mat & image)
@@ -120,10 +120,10 @@ InferenceEngine::InferenceEngine(const NetConfig &netConfig)
   , inputHeight(netConfig.inputHeight)
   , numOutputCategories(netConfig.numOutputCategories)
 {
-  ifstream planFile(netConfig.planPath);
-  stringstream planBuffer;
+  std::ifstream planFile(netConfig.planPath);
+  std::stringstream planBuffer;
   planBuffer << planFile.rdbuf();
-  string plan = planBuffer.str();
+  std::string plan = planBuffer.str();
   runtime = createInferRuntime(gLogger);
   engine = runtime->deserializeCudaEngine((void*)plan.data(),
       plan.size(), nullptr);
@@ -144,7 +144,53 @@ InferenceEngine::~InferenceEngine()
   runtime->destroy();
 }
 
-std::vector<float> InferenceEngine::execute(string imagePath)
+double InferenceEngine::measureThroughput(std::string imagePath, int numRuns)
+{
+  cv::Mat image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
+  cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);
+  cv::resize(image, image, cv::Size(inputWidth, inputHeight));
+  float *input = imageToTensor(image);
+  preprocessFn(input, 3, inputHeight, inputWidth);
+
+  float *inputDevice, *outputDevice, *output;
+
+  // allocate memory on host / device for input / output
+  cudaHostAlloc(&output, numOutputCategories * sizeof(float), cudaHostAllocMapped);
+  cudaMalloc(&inputDevice, inputSize);
+  cudaMalloc(&outputDevice, numOutputCategories * sizeof(float));
+
+  float *bindings[2];
+  bindings[inputBindingIndex] = inputDevice;
+  bindings[outputBindingIndex] = outputDevice;
+
+  double avgTime = 0;
+  for (int i = 0; i < numRuns+1; ++i)
+  {
+    auto t0 = std::chrono::steady_clock::now();
+
+    cudaMemcpy(inputDevice, input, inputSize, cudaMemcpyHostToDevice);
+    context->execute(1, (void**)bindings);
+    cudaMemcpy(output, outputDevice, numOutputCategories * sizeof(float), cudaMemcpyDeviceToHost);
+
+    std::vector<float> predictions(output, output + numOutputCategories);
+    std::chrono::duration<double> diff = std::chrono::steady_clock::now() - t0;
+
+    if (i != 0)
+    {
+      avgTime += diff.count();
+    }
+  }
+
+  cudaFree(inputDevice);
+  cudaFree(outputDevice);
+
+  cudaFreeHost(input);
+  cudaFreeHost(output);
+
+  return avgTime / numRuns;
+}
+
+std::vector<float> InferenceEngine::execute(std::string imagePath)
 {
   cv::Mat image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
   cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);
@@ -174,7 +220,7 @@ std::vector<float> InferenceEngine::execute(string imagePath)
   cudaFreeHost(input);
   cudaFreeHost(output);
 
-  // TODO: fix return of execute to match what gets returned by TF.Sesssion.run
+  // TODO: fix execute interface to match inputs and outputs of TF session.run
   return predictions;
 }
 } // namespace TensorRT

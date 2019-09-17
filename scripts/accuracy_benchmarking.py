@@ -1,3 +1,5 @@
+from __future__ import division
+
 from argparse import ArgumentParser
 import functools
 from collections import namedtuple
@@ -12,92 +14,132 @@ import tensorflow as tf
 from benchmarking_common import (ANNOTATION_DIR, 
                                  IMAGE_DATA_DIR,
                                  output_manager,
-                                 process_input_file,
-                                 tf_session_manager)
+                                 preprocess_input_file,
+                                 tf_session_manager,
+                                 trt_engine_builder)
 from model_meta import NETS, reverse_label_map_lookup
 
-ImageData = namedtuple('ImageData', 'filename label')
 
-
-def _get_directory_label(path):
+def _get_directory_label(path, num_classes):
     xml = os.listdir(path)[0]
     xml_path = os.path.join(path, xml)
-    return next(ET.parse(xml_path).iter('name')).text.replace('_', ' ')
+
+    label_str = next(ET.parse(xml_path).iter('name')).text.replace('_', ' ')
+    return reverse_label_map_lookup(num_classes, label_str)
 
 
-def _collect_test_files(image_dir, annotation_dir):
+def _collect_test_files(image_dir, annotation_dir, num_classes):
     logging.info("Collecting test files")
 
-    test_files = []
+    file_paths, labels = [], []
     for data_dir, label_dir in zip(os.listdir(image_dir), os.listdir(annotation_dir)):
         assert data_dir == label_dir
-
         data_path = os.path.join(image_dir, data_dir)
         label_path = os.path.join(annotation_dir, label_dir)
-        label = _get_directory_label(label_path)
 
-        test_files.extend([
-            ImageData(os.path.join(data_path, jpg), label) for jpg in os.listdir(data_path)
+        label = _get_directory_label(label_path, num_classes)
+        dir_contents = os.listdir(data_path)
+
+        labels.extend([label] * len(dir_contents))
+        file_paths.extend([
+            os.path.join(data_path, file_) for file_ in dir_contents
         ])
 
-    return test_files
+    return file_paths, labels
 
 
-def load_test_set_files_and_labels(images_path, labels_path, size, seed=42):
-    test_files = _collect_test_files(images_path, labels_path)
+def load_test_set_files_and_labels(images_path, labels_path, size, num_classes, seed=42):
     np.random.seed(seed)
-    np.random.shuffle(test_files)
 
-    return test_files[:size]
+    files, labels = _collect_test_files(images_path, labels_path, num_classes)
+    selected = np.random.permutation(len(files))[:size]
 
-
-def load_test_set_data(net_meta, batch_size=16):
-    image_resizer = functools.partial(process_input_file, net_meta)
-    test_set = ((map(image_resizer, [img.filename for img in test_files[i:i+batch_size]]),
-                 (img.label for img in test_files[i:i+batch_size]))
-                for i in range(0, len(test_files), batch_size))
-
-    return test_set
+    return [files[s] for s in selected], [labels[s] for s in selected]
 
 
-def run_tf_accuracy_test(net_meta, test_files, batch_size):
-        test_data = load_test_set_data(net_meta, batch_size)
+def load_test_set_data(net_meta, files, batch_size):
+    shape = net_meta['input_width'], net_meta['input_height']
+    image_processor = functools.partial(process_input_file, shape, net_meta['preprocess_fn'])
+    image_data = (map(image_processor, [img for img in files[i:i+batch_size]])
+                  for i in range(0, len(files), batch_size))
+
+    return image_data
+
+
+def run_trt_accuracy_test(net_meta, data_type, files, batch_size):
+    predictions = []
+    engine = trt_engine_builder(net_meta, data_type)
+    for img in files:
+        # TODO: fix execute interface to match inputs and outputs of TF session.run
+        output = np.array(engine.execute(img)).reshape(1, -1)
+        predictions.extend(output.argmax(axis=1))
+
+    return predictions
+
+
+def run_tf_accuracy_test(net_meta, files, batch_size=1):
+        predictions = []
+        images = load_test_set_data(net_meta, files, batch_size)
         with tf_session_manager(net_meta) as (tf_sess, tf_input, tf_output):
-            predictions = []
-            label_ids = []
-            reverse_lookup = functools.partial(reverse_label_map_lookup, net_meta['num_classes'])
-            for i, (batch, labels) in enumerate(test_data):
-                logging.info("Processing batch %s of %s" % (i+1, int(ceil(len(test_files) / batch_size))))
+            for i, batch in enumerate(images):
+                logging.info("Processing batch %s of %s" % (i+1, int(ceil(len(files) / batch_size))))
                 output = tf_sess.run([tf_output], feed_dict={
                     tf_input: batch
                 })[0]
                 predictions.extend(output.argmax(axis=1))
 
-                label_ids.extend(map(reverse_lookup, labels))
+        return predictions
 
-            return predictions, label_ids
+
+def calculate_class_precision_and_recall(predictions, label, num_classes):
+    precisions, recalls = np.empty((2, num_classes))
+    for label in set(labels):
+        tp = sum(pr == lb == label for pr, lb in zip(predictions, labels))
+        if not tp:
+            precision = recall = 0
+        else:
+            fp = sum(pr == label and lb != label for pr, lb in zip(predictions, labels))
+            fn = sum(pr != label and lb == label for pr, lb in zip(predictions, labels))
+
+            precision = tp / (tp + fp)
+            recall = tp / (tp + fn)
+
+        precisions[label], recalls[label] = precision, recall
+    return precisions, recalls
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('net_type', type=str, choices=['tf', 'trt'])
+    parser.add_argument('--data_type', type=str, choices=['float', 'half'])
+    parser.add_argument('--output_file', '-o', type=str, default=None)
     parser.add_argument('--test_set_size', '-s', type=int, default=1024)
-    parser.add_argument('--output', '-o', type=str, default=None)
-    parser.add_argument('--format', '-f', type=str, default='csv', choices=['csv', 'pretty'])
-    parser.add_argument('--verbose', '-v', default=False, action='store_true')
     parser.add_argument('--batch_size', '-b', type=int, default=1)
+    parser.add_argument('--verbose', '-v', default=False, action='store_true')
     args = parser.parse_args()
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
 
-    with output_manager(args.output) as output:
-        if args.format == 'csv':
-            output.write("net_name,throughput\n")
-        
+    with output_manager(args.output_file) as output:
+        output.write('net_name,accuracy,precision,recall\n')
         for net_name, net_meta in NETS.items():
             if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
                 logging.info("Skipping {}".format(net_name))
                 continue
 
-            test_files = load_test_set_files_and_labels(IMAGE_DATA_DIR, ANNOTATION_DIR, args.test_set_size)
-            predictions, labels = run_tf_accuracy_test(net_meta, test_files, args.batch_size)
+            files, labels = load_test_set_files_and_labels(IMAGE_DATA_DIR,
+                                                           ANNOTATION_DIR,
+                                                           args.test_set_size,
+                                                           net_meta['num_classes'])
+
+            predictions = (run_tf_accuracy_test(net_meta, files, args.batch_size)
+                           if args.net_type == 'tf' else
+                           run_trt_accuracy_test(net_meta, args.data_type, files, args.batch_size))
+
+            accuracy = np.equal(predictions, labels).mean()
+            precision, recall = calculate_class_precision_and_recall(predictions, labels, net_meta['num_classes'])
+
+            avg_precision = precision[np.unique(labels)].mean()
+            avg_recall = recall[np.unique(labels)].mean()
+            output.write('{},{},{},{}\n'.format(net_name, accuracy, avg_precision, avg_recall))

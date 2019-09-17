@@ -37,7 +37,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 ##############################################################################
 # Build
 ##############################################################################
-set(PYBIND_DIR dep/pybind11)
+set(PYBIND_DIR third_party/pybind11)
 if(NOT TARGET pybind11::pybind11)  # Needed when we are building standalone
     add_subdirectory(${PYBIND_DIR} pybind11)
 endif()

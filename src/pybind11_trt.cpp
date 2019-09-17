@@ -30,5 +30,6 @@ PYBIND11_MODULE(tensor_rt, m)
 
     pybind11::class_<TensorRT::InferenceEngine>(m, "InferenceEngine")
         .def(pybind11::init<const TensorRT::NetConfig&>())
-        .def("execute", &TensorRT::InferenceEngine::execute);
+        .def("execute", &TensorRT::InferenceEngine::execute)
+        .def("measure_throughput", &TensorRT::InferenceEngine::measureThroughput);
 }

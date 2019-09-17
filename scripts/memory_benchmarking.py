@@ -4,6 +4,7 @@
 from argparse import ArgumentParser
 import logging
 from multiprocessing import Process
+import os
 import re
 import subprocess
 import time
@@ -12,8 +13,11 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from benchmarking_common import output_manager, tf_session_manager
-from model_meta import NETS, FROZEN_GRAPHS_DIR, CHECKPOINT_DIR
+from benchmarking_common import (output_manager,
+                                 process_input_file,
+                                 tf_session_manager)
+from model_meta import NETS, FROZEN_GRAPHS_DIR, CHECKPOINT_DIR, PLAN_DIR
+from tensor_rt import InferenceEngine, NetConfig
 
 TEST_IMAGE_PATH='data/images/gordon_setter.jpg'
 
@@ -44,18 +48,32 @@ def record_memory_usage(pid, rate_hz=5):
     return uss_kb, pss_kb, rss_kb
 
 
-def test_memory_footprint(net_meta, num_runs=20, test_image=TEST_IMAGE_PATH):
+def spin_trt_inferencing(net_meta, data_type, num_runs, test_image=TEST_IMAGE_PATH):
+    plan_dir = os.path.join(PLAN_DIR, data_type)
+    net_config = NetConfig(
+        plan_path=os.path.join(plan_dir, net_meta['plan_filename']),
+        input_node_name=net_meta['input_name'],
+        output_node_name=net_meta['output_names'][0],
+        preprocess_fn_name=net_meta['preprocess_fn'].__name__,
+        input_height=net_meta['input_height'],
+        input_width=net_meta['input_width'],
+        num_output_categories=net_meta['num_classes'],
+        max_batch_size=1)
+    engine = InferenceEngine(net_config)
+
+    for i in range(num_runs):
+        _ = engine.execute(test_image)
+
+
+def spin_tf_inferencing(net_meta, num_runs=20, test_image=TEST_IMAGE_PATH):
     with tf_session_manager(net_meta) as (tf_sess, tf_input, tf_output):
 
-        # load and preprocess image
-        image = cv2.imread(TEST_IMAGE_PATH)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, (net_meta['input_width'], net_meta['input_height']))
-        image = net_meta['preprocess_fn'](image)
+        shape = net_meta['input_width'], net_meta['input_height']
+        image = process_input_file(shape, net_meta['preprocess_fn'], test_image)
 
         # run network
         for i in range(num_runs):
-            logging.info('Run %d of %d' % (i, num_runs))
+            logging.info('Run %d of %d' % (i+1, num_runs))
             output = tf_sess.run([tf_output], feed_dict={
                 tf_input: image[None, ...]
             })[0]
@@ -63,33 +81,30 @@ def test_memory_footprint(net_meta, num_runs=20, test_image=TEST_IMAGE_PATH):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
+    parser.add_argument('net_type', type=str, choices=['tf', 'trt'])
+    parser.add_argument('--data_type', type=str, choices=['float', 'half'])
+    parser.add_argument('--output_file', '-o', type=str, default=None)
     parser.add_argument('--num_runs', '-n', type=int, default=20)
     parser.add_argument('--test_image', '-i', type=str, default=TEST_IMAGE_PATH)
-    parser.add_argument('--output', '-o', type=str, default=None)
-    parser.add_argument('--format', '-f', type=str, default='csv', choices=['csv', 'pretty'])
     parser.add_argument('--verbose', '-v', default=False, action='store_true')
     args = parser.parse_args()
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
 
-    with output_manager(args.output) as output:
-        if args.format == 'csv':
-            output.write("net_name,average_uss,max_uss,average_pss,max_pss,average_rss,max_rss")
-        for net_name, net_meta in NETS.keys():
+    with output_manager(args.output_file) as output:
+        output.write("net_name,peak_uss,peak_pss,peak_rss\n")
+        for net_name, net_meta in NETS.items():
             if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
                 logging.info('Skipping %s' % net_name)
                 continue
-    
-            p = Process(target=test_memory_footprint, args=(net_meta, args.num_runs))
+        
+            p = (Process(target=spin_tf_inferencing, args=(net_meta, args.num_runs))
+                 if args.net_type == 'tf' else 
+                 Process(target=spin_trt_inferencing, args=(net_meta, args.data_type, args.num_runs)))
+
             p.start()
             uss, pss, rss = record_memory_usage(p.pid)
             
             uss_max, pss_max, rss_max = map(np.max, [uss, pss, rss])
-            if args.format == 'csv':
-                res = '{},{},{},{}'.format(
-                    net_name,uss_max,pss_max,rss_max)
-            else:
-                res = '{}\t{} KB\t{} KB\t{} KB'.format(
-                    net_name,uss_max,pss_max,rss_max)
-            output.write(output)
+            output.write('{},{},{},{}\n'.format(net_name,uss_max,pss_max,rss_max))

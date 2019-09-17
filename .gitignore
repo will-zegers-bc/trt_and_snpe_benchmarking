@@ -8,4 +8,5 @@ data/images
 data/throughput
 data/memory
 data/accuracy
+data/plans
 venv/
