@@ -15,6 +15,17 @@ import slim.nets.resnet_v1
 import slim.nets.resnet_v2
 import slim.nets.mobilenet_v1
 
+MODELS_URL_BASE= 'http://download.tensorflow.org/models/'
+CHECKPOINTS_DIR = 'data/checkpoints/'
+FROZEN_GRAPHS_DIR = 'data/frozen_graphs/'
+PLANS_DIR = 'data/plan/'
+DLCS_DIR = 'data/dlc/'
+
+IMAGES_DIR='data/images/'
+INPUTS_DIR=os.path.join(IMAGES_DIR, 'Images')
+LABELS_DIR=os.path.join(IMAGES_DIR, 'Annotation')
+SAMPLES_DIR=os.path.join(IMAGES_DIR, 'samples')
+
 
 def create_label_map(label_file='data/imagenet_labels_1001.txt'):
     label_map = {}
@@ -65,18 +76,11 @@ def mobilenet_v1_0p25_128(*args, **kwargs):
     return nets.mobilenet_v1.mobilenet_v1(*args, **kwargs)   
 
 
-URL_BASE= 'http://download.tensorflow.org/models/'
-CHECKPOINT_DIR = 'data/checkpoints/'
-FROZEN_GRAPHS_DIR = 'data/frozen_graphs/'
-# UFF_DIR = 'data/uff/'
-PLAN_DIR = 'data/plans/'
-
-
 NETS = {
 
     'vgg_16': {
         'exclude': True,
-        'url': URL_BASE + 'vgg_16_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'vgg_16_2016_08_28.tar.gz',
         'model': nets.vgg.vgg_16,
         'arg_scope': nets.vgg.vgg_arg_scope,
         'num_classes': 1000,
@@ -90,11 +94,14 @@ NETS = {
         'checkpoint_filename': CHECKPOINT_DIR + 'vgg_16.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'vgg_16.pb',
         'trt_convert_status': "works",
-        'plan_filename': 'vgg_16.plan'
+        'dlc_filename': 'vgg_16.dlc',
+        'quantized_dlc_filename': 'vgg_16_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/vgg_16.plan',
     },
 
     'vgg_19': {
-        'url': URL_BASE + 'vgg_19_2016_08_28.tar.gz',
+        'exclude': True,
+        'url': MODELS_URL_BASE + 'vgg_19_2016_08_28.tar.gz',
         'model': nets.vgg.vgg_19,
         'arg_scope': nets.vgg.vgg_arg_scope,
         'num_classes': 1000,
@@ -108,12 +115,13 @@ NETS = {
         'checkpoint_filename': CHECKPOINT_DIR + 'vgg_19.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'vgg_19.pb',
         'trt_convert_status': "works",
-        'plan_filename': 'vgg_19.plan',
-        'exclude': True
+        'dlc_filename': 'vgg_19.dlc',
+        'quantized_dlc_filename': 'vgg_19_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/vgg_19.plan',
     },
 
     'inception_v1': {
-        'url': URL_BASE + 'inception_v1_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'inception_v1_2016_08_28.tar.gz',
         'model': nets.inception.inception_v1,
         'arg_scope': nets.inception.inception_v1_arg_scope,
         'num_classes': 1001,
@@ -127,11 +135,13 @@ NETS = {
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
         'trt_convert_status': "works",
-        'plan_filename': 'inception_v1.plan'
+        'dlc_filename': 'inception_v1.dlc',
+        'quantized_dlc_filename': 'inception_v1_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/inception_v1.plan',
     },
 
     'inception_v2': {
-        'url': URL_BASE + 'inception_v2_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'inception_v2_2016_08_28.tar.gz',
         'model': nets.inception.inception_v2,
         'arg_scope': nets.inception.inception_v2_arg_scope,
         'num_classes': 1001,
@@ -145,11 +155,13 @@ NETS = {
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
         'trt_convert_status': "bad results",
-        'plan_filename': 'inception_v2.plan'
+        'dlc_filename': 'inception_v2.dlc',
+        'quantized_dlc_filename': 'inception_v2_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/inception_v2.plan',
     },
 
     'inception_v3': {
-        'url': URL_BASE + 'inception_v3_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'inception_v3_2016_08_28.tar.gz',
         'model': nets.inception.inception_v3,
         'arg_scope': nets.inception.inception_v3_arg_scope,
         'num_classes': 1001,
@@ -163,11 +175,13 @@ NETS = {
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
         'trt_convert_status': "works",
-        'plan_filename': 'inception_v3.plan'
+        'dlc_filename': 'inception_v3.dlc',
+        'quantized_dlc_filename': 'inception_v3_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/inception_v3.plan',
     },
 
     'inception_v4': {
-        'url': URL_BASE + 'inception_v4_2016_09_09.tar.gz',
+        'url': MODELS_URL_BASE + 'inception_v4_2016_09_09.tar.gz',
         'model': nets.inception.inception_v4,
         'arg_scope': nets.inception.inception_v4_arg_scope,
         'num_classes': 1001,
@@ -181,11 +195,13 @@ NETS = {
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
         'trt_convert_status': "works",
-        'plan_filename': 'inception_v4.plan'
+        'dlc_filename': 'inception_v4.dlc',
+        'quantized_dlc_filename': 'inception_v4_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/inception_v4.plan',
     },
     
     'inception_resnet_v2': {
-        'url': URL_BASE + 'inception_resnet_v2_2016_08_30.tar.gz',
+        'url': MODELS_URL_BASE + 'inception_resnet_v2_2016_08_30.tar.gz',
         'model': nets.inception.inception_resnet_v2,
         'arg_scope': nets.inception.inception_resnet_v2_arg_scope,
         'num_classes': 1001,
@@ -199,11 +215,13 @@ NETS = {
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
         'trt_convert_status': "works",
-        'plan_filename': 'inception_resnet_v2.plan'
+        'dlc_filename': 'inception_resnet_v2.dlc',
+        'quantized_dlc_filename': 'inception_resnet_v2_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/inception_resnet_v2.plan',
     },
 
     'resnet_v1_50': {
-        'url': URL_BASE + 'resnet_v1_50_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'resnet_v1_50_2016_08_28.tar.gz',
         'model': nets.resnet_v1.resnet_v1_50,
         'arg_scope': nets.resnet_v1.resnet_arg_scope,
         'num_classes': 1000,
@@ -216,11 +234,13 @@ NETS = {
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v1_50.pb',
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
-        'plan_filename': 'resnet_v1_50.plan'
+        'dlc_filename': 'resnet_v1_50.dlc',
+        'quantized_dlc_filename': 'resnet_v1_50_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/resnet_v1_50.plan',
     },
 
     'resnet_v1_101': {
-        'url': URL_BASE + 'resnet_v1_101_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'resnet_v1_101_2016_08_28.tar.gz',
         'model': nets.resnet_v1.resnet_v1_101,
         'arg_scope': nets.resnet_v1.resnet_arg_scope,
         'num_classes': 1000,
@@ -233,11 +253,13 @@ NETS = {
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v1_101.pb',
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
-        'plan_filename': 'resnet_v1_101.plan'
+        'dlc_filename': 'resnet_v1_101.dlc',
+        'quantized_dlc_filename': 'resnet_v1_101_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/resnet_v1_101.plan',
     },
 
     'resnet_v1_152': {
-        'url': URL_BASE + 'resnet_v1_152_2016_08_28.tar.gz',
+        'url': MODELS_URL_BASE + 'resnet_v1_152_2016_08_28.tar.gz',
         'model': nets.resnet_v1.resnet_v1_152,
         'arg_scope': nets.resnet_v1.resnet_arg_scope,
         'num_classes': 1000,
@@ -250,11 +272,13 @@ NETS = {
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v1_152.pb',
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
-        'plan_filename': 'resnet_v1_152.plan'
+        'dlc_filename': 'resnet_v1_152.dlc',
+        'quantized_dlc_filename': 'resnet_v1_152_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/resnet_v1_152.plan',
     },
 
     'resnet_v2_50': {
-        'url': URL_BASE + 'resnet_v2_50_2017_04_14.tar.gz',
+        'url': MODELS_URL_BASE + 'resnet_v2_50_2017_04_14.tar.gz',
         'model': nets.resnet_v2.resnet_v2_50,
         'arg_scope': nets.resnet_v2.resnet_arg_scope,
         'num_classes': 1001,
@@ -267,11 +291,13 @@ NETS = {
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v2_50.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
-        'plan_filename': 'resnet_v2_50.plan'
+        'dlc_filename': 'resnet_v2_50.dlc',
+        'quantized_dlc_filename': 'resnet_v2_50_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/resnet_v2_50.plan',
     },
 
     'resnet_v2_101': {
-        'url': URL_BASE + 'resnet_v2_101_2017_04_14.tar.gz',
+        'url': MODELS_URL_BASE + 'resnet_v2_101_2017_04_14.tar.gz',
         'model': nets.resnet_v2.resnet_v2_101,
         'arg_scope': nets.resnet_v2.resnet_arg_scope,
         'num_classes': 1001,
@@ -284,11 +310,13 @@ NETS = {
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v2_101.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
-        'plan_filename': 'resnet_v2_101.plan'
+        'dlc_filename': 'resnet_v2_101.dlc',
+        'quantized_dlc_filename': 'resnet_v2_101_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/resnet_v2_101.plan',
     },
 
     'resnet_v2_152': {
-        'url': URL_BASE + 'resnet_v2_152_2017_04_14.tar.gz',
+        'url': MODELS_URL_BASE + 'resnet_v2_152_2017_04_14.tar.gz',
         'model': nets.resnet_v2.resnet_v2_152,
         'arg_scope': nets.resnet_v2.resnet_arg_scope,
         'num_classes': 1001,
@@ -301,7 +329,9 @@ NETS = {
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v2_152.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
-        'plan_filename': 'resnet_v2_152.plan'
+        'dlc_filename': 'resnet_v2_152.dlc',
+        'quantized_dlc_filename': 'resnet_v2_152_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/resnet_v2_152.plan',
     },
 
     #'resnet_v2_200': {
@@ -309,7 +339,7 @@ NETS = {
     #},
 
     'mobilenet_v1_1p0_224': {
-        'url': URL_BASE + 'mobilenet_v1_1.0_224_2017_06_14.tar.gz',
+        'url': MODELS_URL_BASE + 'mobilenet_v1_1.0_224_2017_06_14.tar.gz',
         'model': mobilenet_v1_1p0_224,
         'arg_scope': nets.mobilenet_v1.mobilenet_v1_arg_scope,
         'num_classes': 1001,
@@ -321,13 +351,15 @@ NETS = {
         'checkpoint_filename': CHECKPOINT_DIR + 
             'mobilenet_v1_1.0_224.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'mobilenet_v1_1p0_224.pb',
-        'plan_filename': 'mobilenet_v1_1p0_224.plan',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
+        'dlc_filename': 'mobilenet_v1_1p0_224.dlc',
+        'quantized_dlc_filename': 'mobilenet_v1_1p0_224_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/mobilenet_v1_1p0_224.plan',
     },
 
     'mobilenet_v1_0p5_160': {
-        'url': URL_BASE + 'mobilenet_v1_0.50_160_2017_06_14.tar.gz',
+        'url': MODELS_URL_BASE + 'mobilenet_v1_0.50_160_2017_06_14.tar.gz',
         'model': mobilenet_v1_0p5_160,
         'arg_scope': nets.mobilenet_v1.mobilenet_v1_arg_scope,
         'num_classes': 1001,
@@ -339,13 +371,15 @@ NETS = {
         'checkpoint_filename': CHECKPOINT_DIR + 
             'mobilenet_v1_0.50_160.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'mobilenet_v1_0p5_160.pb',
-        'plan_filename': 'mobilenet_v1_0p5_160.plan',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
+        'dlc_filename': 'mobilenet_v1_0p5_160.dlc',
+        'quantized_dlc_filename': 'mobilenet_v1_0p5_160_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/mobilenet_v1_0p5_160.plan',
     },
 
     'mobilenet_v1_0p25_128': {
-        'url': URL_BASE + 'mobilenet_v1_0.25_128_2017_06_14.tar.gz',
+        'url': MODELS_URL_BASE + 'mobilenet_v1_0.25_128_2017_06_14.tar.gz',
         'model': mobilenet_v1_0p25_128,
         'arg_scope': nets.mobilenet_v1.mobilenet_v1_arg_scope,
         'num_classes': 1001,
@@ -357,9 +391,11 @@ NETS = {
         'checkpoint_filename': CHECKPOINT_DIR + 
             'mobilenet_v1_0.25_128.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'mobilenet_v1_0p25_128.pb',
-        'plan_filename': 'mobilenet_v1_0p25_128.plan',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
+        'dlc_filename': 'mobilenet_v1_0p25_128.dlc',
+        'quantized_dlc_filename': 'mobilenet_v1_0p25_128_quantized.dlc',
+        'plan_filename': PLANS_DIR + '/{}/mobilenet_v1_0p25_128.plan',
     },
 }
 

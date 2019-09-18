@@ -8,15 +8,14 @@ import os
 import time
 
 import numpy as np
-import tensorflow as tf
 
 from benchmarking_common import (output_manager,
                                  preprocess_input_file,
                                  tf_session_manager,
                                  trt_engine_builder)
-from model_meta import CHECKPOINT_DIR, FROZEN_GRAPHS_DIR, NETS, PLAN_DIR
+from model_meta import NETS, SAMPLES_DIR
 
-TEST_IMAGE_PATH='data/images/gordon_setter.jpg'
+TEST_IMAGE_PATH=os.path.join(SAMPLES_DIR, 'gordon_setter.jpg')
 
 
 def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TEST_IMAGE_PATH):

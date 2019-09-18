@@ -1,5 +1,6 @@
 *.swp
 *.pyc
+inputs_raw_list_*
 
 build/
 data/checkpoints
@@ -9,4 +10,5 @@ data/throughput
 data/memory
 data/accuracy
 data/plans
+data/dlc
 venv/

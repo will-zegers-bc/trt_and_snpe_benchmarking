@@ -9,17 +9,15 @@ import re
 import subprocess
 import time
 
-import cv2
 import numpy as np
-import tensorflow as tf
 
 from benchmarking_common import (output_manager,
                                  preprocess_input_file,
                                  tf_session_manager,
                                  trt_engine_builder)
-from model_meta import NETS, FROZEN_GRAPHS_DIR, CHECKPOINT_DIR, PLAN_DIR
+from model_meta import NETS, SAMPLES_DIR
 
-TEST_IMAGE_PATH='data/images/gordon_setter.jpg'
+TEST_IMAGE_PATH=os.path.join(SAMPLES_DIR, 'gordon_setter.jpg')
 
 
 def record_memory_usage(pid, rate_hz=5):

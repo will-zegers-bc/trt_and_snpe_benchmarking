@@ -5,12 +5,17 @@ import urllib
 import tensorflow as tf
 import tensorflow.contrib.slim as tf_slim
 
-from benchmarking_common import IMAGE_BASE_DIR, IMAGE_DATA_DIR, ANNOTATION_DIR
 from convert_relu6 import convertRelu6
-from model_meta import CHECKPOINT_DIR, FROZEN_GRAPHS_DIR, NETS
+from model_meta import (CHECKPOINTS_DIR,
+                        FROZEN_GRAPHS_DIR,
+                        IMAGES_DIR,
+                        INPUTS_DIR,
+                        LABELS_DIR,
+                        NETS,
+                        SAMPLES_DIR)
 
-IMAGE_DATA_URL='http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar'
-ANNOTATION_URL='http://vision.stanford.edu/aditya86/ImageNetDogs/annotation.tar'
+INPUTS_URL='http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar'
+LABELS_URL='http://vision.stanford.edu/aditya86/ImageNetDogs/annotation.tar'
 
 SAMPLE_IMAGES={
     'gordon_setter': 'http://farm3.static.flickr.com/2017/2496831224_221cd963a2.jpg',
@@ -71,8 +76,8 @@ def convert_model_to_frozen_graph(net_meta):
 
 
 if __name__ == '__main__':
-    if not os.path.exists(CHECKPOINT_DIR):
-        os.makedirs(CHECKPOINT_DIR)
+    if not os.path.exists(CHECKPOINTS_DIR):
+        os.makedirs(CHECKPOINTS_DIR)
 
     if not os.path.exists(FROZEN_GRAPHS_DIR):
         os.makedirs(FROZEN_GRAPHS_DIR)
@@ -83,23 +88,23 @@ if __name__ == '__main__':
 
         if not os.path.exists(net_meta['checkpoint_filename']):
             print('[+] Downloading and extracting {} checkpoint'.format(net_name))
-            download_and_extract(net_meta['url'], CHECKPOINT_DIR)
+            download_and_extract(net_meta['url'], CHECKPOINTS_DIR)
 
         if not os.path.exists(net_meta['frozen_graph_filename']):
             print('[+] Converting {} to a TF frozen graph'.format(net_name))
             convert_model_to_frozen_graph(net_meta)
 
-    if not os.path.exists(IMAGE_BASE_DIR):
-        os.makedirs(IMAGE_BASE_DIR)
+    if not os.path.exists(IMAGES_DIR):
+        os.makedirs(IMAGES_DIR)
     
-    if not os.path.exists(IMAGE_DATA_DIR):
+    if not os.path.exists(INPUTS_DIR):
         print('[+] Downloading Stanford Dogs dataset')
-        download_and_extract(IMAGE_DATA_URL, IMAGE_BASE_DIR)
-        download_and_extract(ANNOTATION_URL, IMAGE_BASE_DIR)
+        download_and_extract(INPUTS_URL, IMAGES_DIR)
+        download_and_extract(LABELS_URL, IMAGES_DIR)
 
     for name, url in SAMPLE_IMAGES.items():
         image_jpg = name + '.jpg'
-        image_path = os.path.join(IMAGE_BASE_DIR, image_jpg)
+        image_path = os.path.join(SAMPLES_DIR, image_jpg)
         if not os.path.exists(image_path):
             print('[+] Downloading sample image {}'.format(image_jpg))
             urllib.urlretrieve(url, image_path)

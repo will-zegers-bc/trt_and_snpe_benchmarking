@@ -7,7 +7,7 @@ import os
 
 import uff
 
-from model_meta import NETS, FROZEN_GRAPHS_DIR, CHECKPOINT_DIR, PLAN_DIR
+from model_meta import NETS, FROZEN_GRAPHS_DIR, CHECKPOINTS_DIR, PLANS_DIR
 from convert_plan import frozenToPlan
 
 
@@ -33,10 +33,9 @@ if __name__ == '__main__':
             continue
 
         logging.info("Convertings %s to PLAN" % net_name)
-        plan_file = os.path.join(output_dir, net_meta['plan_filename'])
         frozenToPlan(
             net_meta['frozen_graph_filename'],
-            plan_file,
+            net_meta['plan_filename'].format(args.data_type),
             net_meta['input_name'],
             net_meta['input_height'],
             net_meta['input_width'],

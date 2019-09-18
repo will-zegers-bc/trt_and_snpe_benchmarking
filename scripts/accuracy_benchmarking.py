@@ -2,22 +2,18 @@ from __future__ import division
 
 from argparse import ArgumentParser
 import functools
-from collections import namedtuple
 import logging
 from math import ceil
 import os
 from xml.etree import ElementTree as ET
 
 import numpy as np
-import tensorflow as tf
 
-from benchmarking_common import (ANNOTATION_DIR, 
-                                 IMAGE_DATA_DIR,
-                                 output_manager,
+from benchmarking_common import (output_manager,
                                  preprocess_input_file,
                                  tf_session_manager,
                                  trt_engine_builder)
-from model_meta import NETS, reverse_label_map_lookup
+from model_meta import INPUTS_DIR, LABELS_DIR, NETS, reverse_label_map_lookup
 
 
 def _get_directory_label(path, num_classes):
@@ -128,8 +124,8 @@ if __name__ == '__main__':
                 logging.info("Skipping {}".format(net_name))
                 continue
 
-            files, labels = load_test_set_files_and_labels(IMAGE_DATA_DIR,
-                                                           ANNOTATION_DIR,
+            files, labels = load_test_set_files_and_labels(INPUTS_DIR,
+                                                           LABELS_DIR,
                                                            args.test_set_size,
                                                            net_meta['num_classes'])
 

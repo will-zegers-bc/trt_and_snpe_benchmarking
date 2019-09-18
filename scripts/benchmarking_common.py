@@ -9,10 +9,6 @@ try:
 except ImportError:
     print("[-] No TenorRT module. TRT functionality will not be supported")
 
-IMAGE_BASE_DIR='data/images/'
-IMAGE_DATA_DIR=IMAGE_BASE_DIR+'Images/'
-ANNOTATION_DIR=IMAGE_BASE_DIR+'Annotation/'
-
 
 def preprocess_input_file(shape, preprocess_fn, img_file):
     image = cv2.imread(img_file)
@@ -55,9 +51,8 @@ def tf_session_manager(net_meta):
 
 
 def trt_engine_builder(net_meta, data_type):
-    plan_dir = os.path.join(PLAN_DIR, data_type)
     net_config = NetConfig(
-        plan_path=os.path.join(plan_dir, net_meta['plan_filename']),
+        plan_path=net_meta['plan_filename'].format(data_type),
         input_node_name=net_meta['input_name'],
         output_node_name=net_meta['output_names'][0],
         preprocess_fn_name=net_meta['preprocess_fn'].__name__,
