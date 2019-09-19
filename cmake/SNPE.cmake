@@ -1,15 +1,12 @@
 set(SNPE_VERSION 1.25.1.310)
 set(SNPE_ROOT $ENV{HOME}/snpe-${SNPE_VERSION})
 
-include_directories(
-    ${SNPE_ROOT}/include/zdl
-)
+include_directories(${SNPE_ROOT}/include/zdl)
 
-option(AARCH64 "Build of aarch64 architecture" OFF)
-if(AARCH64)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${SNPE_ROOT}/lib/aarch64-linux-gcc4.9")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -L ${SNPE_ROOT}/lib/x86_64-linux-clang")
 else()
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${SNPE_ROOT}/lib/x86_64-linux-clang")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -L ${SNPE_ROOT}/lib/aarch64-linux-gcc4.9")
 endif()
 
 set(SNPE_SOURCE_FILES src/CheckRuntime.cpp
@@ -37,5 +34,5 @@ add_library(snpe SHARED ${SNPE_SOURCE_FILES}
                         ${SNPE_HEADER_FILES}
                         ${SNPE_WRAPPER_FILES}
 )
-target_link_libraries(snpe ${PYTHON27_LIBRARIES} SNPE libsymphony-cpu.so)
+target_link_libraries(snpe  SNPE symphony-cpu.so)
 set_target_properties(snpe PROPERTIES SUFFIX ".so" PREFIX "")
