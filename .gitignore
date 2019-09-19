@@ -1,14 +1,7 @@
 *.swp
 *.pyc
-inputs_raw_list_*
 
 build/
-data/checkpoints
-data/frozen_graphs
-data/images
-data/throughput
-data/memory
-data/accuracy
-data/plans
-data/dlc
+data/
 venv/
+venv

@@ -1,6 +1,8 @@
 # Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
 # Full license terms provided in LICENSE.md file.
 
+import os
+
 import numpy as np
 import sys
 sys.path.append("third_party/models/research/")
@@ -91,7 +93,7 @@ NETS = {
         'input_channels': 3, 
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
-        'checkpoint_filename': CHECKPOINT_DIR + 'vgg_16.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'vgg_16.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'vgg_16.pb',
         'trt_convert_status': "works",
         'dlc_filename': 'vgg_16.dlc',
@@ -112,7 +114,7 @@ NETS = {
         'input_channels': 3, 
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
-        'checkpoint_filename': CHECKPOINT_DIR + 'vgg_19.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'vgg_19.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'vgg_19.pb',
         'trt_convert_status': "works",
         'dlc_filename': 'vgg_19.dlc',
@@ -130,7 +132,7 @@ NETS = {
         'input_height': 224,
         'input_channels': 3,
         'output_names': ['InceptionV1/Logits/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'inception_v1.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'inception_v1.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'inception_v1.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -150,7 +152,7 @@ NETS = {
         'input_height': 224,
         'input_channels': 3,
         'output_names': ['InceptionV2/Logits/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'inception_v2.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'inception_v2.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'inception_v2.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -170,7 +172,7 @@ NETS = {
         'input_height': 299,
         'input_channels': 3,
         'output_names': ['InceptionV3/Logits/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'inception_v3.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'inception_v3.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'inception_v3.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -190,7 +192,7 @@ NETS = {
         'input_height': 299,
         'input_channels': 3,
         'output_names': ['InceptionV4/Logits/Logits/BiasAdd'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'inception_v4.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'inception_v4.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'inception_v4.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -210,7 +212,7 @@ NETS = {
         'input_height': 299,
         'input_channels': 3,
         'output_names': ['InceptionResnetV2/Logits/Logits/BiasAdd'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'inception_resnet_v2_2016_08_30.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'inception_resnet_v2_2016_08_30.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'inception_resnet_v2.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -230,7 +232,7 @@ NETS = {
         'input_height': 224,
         'input_channels': 3,
         'output_names': ['resnet_v1_50/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'resnet_v1_50.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'resnet_v1_50.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v1_50.pb',
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
@@ -249,7 +251,7 @@ NETS = {
         'input_height': 224,
         'input_channels': 3,
         'output_names': ['resnet_v1_101/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'resnet_v1_101.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'resnet_v1_101.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v1_101.pb',
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
@@ -268,7 +270,7 @@ NETS = {
         'input_height': 224,
         'input_channels': 3,
         'output_names': ['resnet_v1_152/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'resnet_v1_152.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'resnet_v1_152.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v1_152.pb',
         'preprocess_fn': preprocess_vgg,
         'postprocess_fn': postprocess_vgg,
@@ -287,7 +289,7 @@ NETS = {
         'input_height': 299,
         'input_channels': 3,
         'output_names': ['resnet_v2_50/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'resnet_v2_50.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'resnet_v2_50.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v2_50.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -306,7 +308,7 @@ NETS = {
         'input_height': 299,
         'input_channels': 3,
         'output_names': ['resnet_v2_101/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'resnet_v2_101.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'resnet_v2_101.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v2_101.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -325,7 +327,7 @@ NETS = {
         'input_height': 299,
         'input_channels': 3,
         'output_names': ['resnet_v2_152/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 'resnet_v2_152.ckpt',
+        'checkpoint_filename': CHECKPOINTS_DIR + 'resnet_v2_152.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'resnet_v2_152.pb',
         'preprocess_fn': preprocess_inception,
         'postprocess_fn': postprocess_inception,
@@ -348,7 +350,7 @@ NETS = {
         'input_height': 224,
         'input_channels': 3,
         'output_names': ['MobilenetV1/Logits/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 
+        'checkpoint_filename': CHECKPOINTS_DIR + 
             'mobilenet_v1_1.0_224.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'mobilenet_v1_1p0_224.pb',
         'preprocess_fn': preprocess_inception,
@@ -368,7 +370,7 @@ NETS = {
         'input_height': 160,
         'input_channels': 3,
         'output_names': ['MobilenetV1/Logits/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 
+        'checkpoint_filename': CHECKPOINTS_DIR + 
             'mobilenet_v1_0.50_160.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'mobilenet_v1_0p5_160.pb',
         'preprocess_fn': preprocess_inception,
@@ -388,7 +390,7 @@ NETS = {
         'input_height': 128,
         'input_channels': 3,
         'output_names': ['MobilenetV1/Logits/SpatialSqueeze'],
-        'checkpoint_filename': CHECKPOINT_DIR + 
+        'checkpoint_filename': CHECKPOINTS_DIR + 
             'mobilenet_v1_0.25_128.ckpt',
         'frozen_graph_filename': FROZEN_GRAPHS_DIR + 'mobilenet_v1_0p25_128.pb',
         'preprocess_fn': preprocess_inception,

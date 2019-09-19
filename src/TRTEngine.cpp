@@ -12,7 +12,7 @@
 #include <opencv2/opencv.hpp>
 #include <NvInfer.h>
 
-#include "trt_inference_engine.hpp"
+#include "TRTEngine.hpp"
 
 
 using namespace nvinfer1;
@@ -115,7 +115,7 @@ void preprocessInception(float * tensor, size_t channels, size_t height, size_t 
     tensor[i] = 2.0 * (tensor[i] / 255.0 - 0.5);
 }
 
-InferenceEngine::InferenceEngine(const NetConfig &netConfig) 
+TRTEngine::TRTEngine(const NetConfig &netConfig) 
   : inputWidth(netConfig.inputWidth)
   , inputHeight(netConfig.inputHeight)
   , numOutputCategories(netConfig.numOutputCategories)
@@ -137,14 +137,14 @@ InferenceEngine::InferenceEngine(const NetConfig &netConfig)
   preprocessFn = netConfig.preprocessFn();
 }
 
-InferenceEngine::~InferenceEngine()
+TRTEngine::~TRTEngine()
 {
   context->destroy();  
   engine->destroy();
   runtime->destroy();
 }
 
-double InferenceEngine::measureThroughput(std::string imagePath, int numRuns)
+double TRTEngine::measureThroughput(std::string imagePath, int numRuns)
 {
   cv::Mat image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
   cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);
@@ -190,7 +190,7 @@ double InferenceEngine::measureThroughput(std::string imagePath, int numRuns)
   return avgTime / numRuns;
 }
 
-std::vector<float> InferenceEngine::execute(std::string imagePath)
+std::vector<float> TRTEngine::execute(std::string imagePath)
 {
   cv::Mat image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
   cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);

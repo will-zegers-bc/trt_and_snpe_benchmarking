@@ -3,7 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "trt_inference_engine.hpp"
+#include "TRTEngine.hpp"
 
 
 PYBIND11_MODULE(tensor_rt, m)
@@ -28,8 +28,8 @@ PYBIND11_MODULE(tensor_rt, m)
         .def_readwrite("num_output_categories", &TensorRT::NetConfig::numOutputCategories)
         .def_readwrite("max_batch_size", &TensorRT::NetConfig::maxBatchSize);
 
-    pybind11::class_<TensorRT::InferenceEngine>(m, "InferenceEngine")
+    pybind11::class_<TensorRT::TRTEngine>(m, "InferenceEngine")
         .def(pybind11::init<const TensorRT::NetConfig&>())
-        .def("execute", &TensorRT::InferenceEngine::execute)
-        .def("measure_throughput", &TensorRT::InferenceEngine::measureThroughput);
+        .def("execute", &TensorRT::TRTEngine::execute)
+        .def("measure_throughput", &TensorRT::TRTEngine::measureThroughput);
 }

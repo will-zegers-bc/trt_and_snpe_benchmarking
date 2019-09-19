@@ -36,7 +36,7 @@ struct NetConfig
   preprocess_fn_t preprocessFn() const;
 };
 
-class InferenceEngine
+class TRTEngine
 {
   int inputBindingIndex;
   int outputBindingIndex;
@@ -51,8 +51,8 @@ class InferenceEngine
   IExecutionContext* context;
 
 public:
-  InferenceEngine(const NetConfig&);
-  ~InferenceEngine();
+  TRTEngine(const NetConfig&);
+  ~TRTEngine();
 
   std::vector<float> execute(std::string);
   double measureThroughput(std::string, int);

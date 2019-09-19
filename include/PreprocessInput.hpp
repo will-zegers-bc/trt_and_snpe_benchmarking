@@ -1,0 +1,21 @@
+//==============================================================================
+//
+//  Copyright (c) 2018 Qualcomm Technologies, Inc.
+//  All Rights Reserved.
+//  Confidential and Proprietary - Qualcomm Technologies, Inc.
+//
+//==============================================================================
+
+#ifndef PREPROCESSINPUT_H
+#define PREPROCESSINPUT_H
+
+
+#include <string>
+#include <vector>
+
+namespace SNPE {
+
+std::vector<std::vector<std::string>> preprocessInput(const char* filePath, size_t batchSize);
+
+}
+#endif
