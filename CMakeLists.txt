@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
-option(BUILD_TENSOR_RT "Build runtime engine modules for TensorRT" OFF)
-option(BUILD_SNPE "Build runtime engine modules for Qualcomm SNPE" OFF)
+option(TENSOR_RT "Build runtime engine modules for TensorRT" OFF)
+option(SNPE "Build runtime engine modules for Qualcomm SNPE" OFF)
 
 set(PYBIND_DIR third_party/pybind11)
 if(NOT TARGET pybind11::pybind11)  # Needed when we are building standalone
@@ -31,11 +31,10 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -Wall -fPIC ${REDUCE_WARNINGS} -fmax-errors=5")
 endif()
 
-if(BUILD_TENSOR_RT)
+if(TENSOR_RT)
     include(cmake/TensorRT.cmake)
 endif()
 
-if(BUILD_SNPE)
-    set(CMAKE_CXX_COMPILER clang++-3.8)
+if(SNPE)
     include(cmake/SNPE.cmake)
 endif()
