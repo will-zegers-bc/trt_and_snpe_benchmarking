@@ -5,7 +5,12 @@ import sys
 import cv2
 import tensorflow as tf
 try:
-    from tensor_rt import InferenceEngine, NetConfig
+    import snpe
+except ImportError:
+    print("[-] No SNPE module. SNPE functionality will not be supported")
+
+try:
+    import tensor_rt
 except ImportError:
     print("[-] No TenorRT module. TRT functionality will not be supported")
 
@@ -20,14 +25,18 @@ def preprocess_input_file(shape, preprocess_fn, img_file):
 
 @contextlib.contextmanager
 def output_manager(output_file=None):
+    out = None
     try:
         if output_file is None:
             out = sys.stdout
         else:
             out = open(output_file, 'w')
         yield out
+    except Exception as ex:
+        print(ex)
     finally:
-        out.close()
+        if out is not None:
+            out.close()
 
 
 @contextlib.contextmanager
@@ -51,7 +60,7 @@ def tf_session_manager(net_meta):
 
 
 def trt_engine_builder(net_meta, data_type):
-    net_config = NetConfig(
+    net_config = tensor_rt.NetConfig(
         plan_path=net_meta['plan_filename'].format(data_type),
         input_node_name=net_meta['input_name'],
         output_node_name=net_meta['output_names'][0],
@@ -61,4 +70,9 @@ def trt_engine_builder(net_meta, data_type):
         num_output_categories=net_meta['num_classes'],
         max_batch_size=1)
 
-    return InferenceEngine(net_config)
+    return tensor_rt.InferenceEngine(net_config)
+
+
+def snpe_engine_builder(dlc_file, runtime):
+    return snpe.InferenceEngine(dlc_file, runtime)
+

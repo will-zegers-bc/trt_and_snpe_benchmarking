@@ -43,8 +43,25 @@ namespace SNPE {
 SNPEEngine::SNPEEngine(const std::string& dlc, const std::string& runtimeString)
     : runtime(getRuntime(runtimeString))
 {
+
+    std::ifstream dlcFileCheck(dlc);
+    if (!dlcFileCheck)
+    {
+        std::cerr << "DLC file not found" << std::endl;
+        throw std::runtime_error("DLC file not found");
+    }
     std::unique_ptr<zdl::DlContainer::IDlContainer> container = loadContainerFromFile(dlc);
+    if (container == nullptr)
+    {
+        std::cerr << "Error while opening the container file." << std::endl;
+        throw std::runtime_error("Error while opening the container file.");
+    }
     snpe = setBuilderOptions(container, runtime);
+    if (snpe == nullptr)
+    {
+        std::cerr << "Error while building SNPE object." << std::endl;
+        throw std::runtime_error("Error while building SNPE object.");
+    }
     tensorShape = snpe->getInputDimensions();
     batchSize = tensorShape.getDimensions()[0];
 }
@@ -53,6 +70,13 @@ std::vector<float> SNPEEngine::execute(const std::string& inputFile)
 {
     std::vector<float> output;
     zdl::DlSystem::TensorMap outputTensorMap;
+
+    std::ifstream inputFileCheck(inputFile);
+    if (!inputFileCheck)
+    {
+        std::cerr << "Input .raw file not found" << std::endl;
+        throw std::runtime_error("Input file not found");
+    }
 
     std::unique_ptr<zdl::DlSystem::ITensor> inputTensor = loadInputTensor(snpe, inputFile);
 
@@ -71,10 +95,17 @@ std::vector<float> SNPEEngine::execute(const std::string& inputFile)
     return output;
 }
 
-double SNPEEngine::measureLatency(const std::string& inputFile, size_t numRuns)
+double SNPEEngine::measureLatency(const std::string& inputFile, int numRuns)
 {
     std::vector<float> output;
     zdl::DlSystem::TensorMap outputTensorMap;
+
+    std::ifstream inputFileCheck(inputFile);
+    if (!inputFileCheck)
+    {
+        std::cerr << "Input .raw file not found" << std::endl;
+        throw std::runtime_error("Input file not found");
+    }
 
     std::unique_ptr<zdl::DlSystem::ITensor> inputTensor = loadInputTensor(snpe, inputFile);
 

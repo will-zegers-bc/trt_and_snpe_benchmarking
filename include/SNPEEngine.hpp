@@ -19,6 +19,6 @@ class SNPEEngine
 public:
     SNPEEngine(const std::string&, const std::string&);
     std::vector<float> execute(const std::string&);
-    double measureLatency(const std::string&, size_t);
+    double measureLatency(const std::string&, int);
 };
 } // namespace SNPE

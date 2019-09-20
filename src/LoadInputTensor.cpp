@@ -36,7 +36,6 @@ std::unique_ptr<zdl::DlSystem::ITensor> loadInputTensor (std::unique_ptr<zdl::SN
 
     assert (strList.size() == 1);
 
-    std::cout << "Processing DNN Input: " << filePath << "\n";
     std::vector<float> loadedFile = loadFloatDataFile(filePath);
 
     const auto &inputDims_opt = snpe->getInputDimensions(strList.at(0));
