@@ -22,6 +22,10 @@ if __name__ == '__main__':
         os.makedirs(DLCS_DIR)
 
     for net_name, net_meta in NETS.items():
+        if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
+            logging.info("Skipping {}".format(net_name))
+            continue
+
         size = net_meta['input_width']
         shape = '1,{},{},{}'.format(
             net_meta['input_width'],
@@ -29,14 +33,15 @@ if __name__ == '__main__':
             net_meta['input_channels']
         )
 
-        logging.info('[+] Converting ' + net_name +' to SNPE DLC format')
-        cmd = ['snpe-tensorflow-to-dlc',
-               '--graph', net_meta['frozen_graph_filename'],
-               '--input_dim', net_meta['input_name'], shape,
-               '--out_node', net_meta['output_names'][0],
-               '--dlc', os.path.join(DLCS_DIR, net_meta['dlc_filename']),
-               '--allow_unconsumed_nodes']
-        subprocess.call(cmd)
+        if not os.path.exists(net_meta['dlc_filename']):
+            logging.info('[+] Converting ' + net_name +' to SNPE DLC format')
+            cmd = ['snpe-tensorflow-to-dlc',
+                   '--graph', net_meta['frozen_graph_filename'],
+                   '--input_dim', net_meta['input_name'], shape,
+                   '--out_node', net_meta['output_names'][0],
+                   '--dlc', net_meta['dlc_filename'],
+                   '--allow_unconsumed_nodes']
+            subprocess.call(cmd)
 
         if args.target_dsp:
             # TODO: need more quantization inputs
@@ -53,11 +58,12 @@ if __name__ == '__main__':
             if not os.path.exists(txt_path):
                 create_file_list(raw_dir, txt_path, '*.raw')
 
-            logging.info('[+] Creating ' + net_name + ' quantized model')
-            cmd = ['snpe-dlc-quantize',
-                   '--input_dlc', os.path.join(DLCS_DIR, net_meta['dlc_filename']),
-                   '--input_list', os.path.abspath(txt_name),
-                   '--output_dlc', os.path.join(DLCS_DIR, net_meta['quantized_dlc_filename'])]
-            if args.use_enhanced_quantizer:
-                cmd.append('--use_enhanced_quantizer')
-            subprocess.call(cmd)
+            if not os.path.exists(net_meta['quantized_dlc_filename']):
+                logging.info('[+] Creating ' + net_name + ' quantized model')
+                cmd = ['snpe-dlc-quantize',
+                       '--input_dlc', net_meta['dlc_filename'],
+                       '--input_list', txt_path,
+                       '--output_dlc', net_meta['quantized_dlc_filename']]
+                if args.use_enhanced_quantizer:
+                    cmd.append('--use_enhanced_quantizer')
+                subprocess.call(cmd)

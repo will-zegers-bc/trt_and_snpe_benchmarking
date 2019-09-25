@@ -30,9 +30,9 @@ set(SNPE_HEADER_FILES include/CheckRuntime.hpp
 )
 set(SNPE_WRAPPER_FILES src/PySNPE.cpp)
 
-add_library(snpe SHARED ${SNPE_SOURCE_FILES} 
+add_library(PySNPE SHARED ${SNPE_SOURCE_FILES}
                         ${SNPE_HEADER_FILES}
                         ${SNPE_WRAPPER_FILES}
 )
-target_link_libraries(snpe  SNPE symphony-cpu.so)
-set_target_properties(snpe PROPERTIES SUFFIX ".so" PREFIX "")
+target_link_libraries(PySNPE SNPE symphony-cpu.so)
+set_target_properties(PySNPE PROPERTIES SUFFIX ".so" PREFIX "")
