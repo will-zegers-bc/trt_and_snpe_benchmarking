@@ -74,5 +74,5 @@ def trt_engine_builder(net_meta, data_type):
 
 
 def snpe_engine_builder(dlc_file, runtime):
-    return PySnpe.InferenceEngine(dlc_file, runtime)
+    return PySNPE.InferenceEngine(dlc_file, runtime)
 

@@ -6,7 +6,7 @@
 #include "SNPEEngine.hpp"
 
 
-PYBIND11_MODULE(snpe, m)
+PYBIND11_MODULE(PySNPE, m)
 {
     m.doc() = "SNPE Inference Engine";
 
