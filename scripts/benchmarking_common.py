@@ -5,7 +5,7 @@ import sys
 import cv2
 import tensorflow as tf
 try:
-    import snpe
+    import PySNPE
 except ImportError:
     print("[-] No SNPE module. SNPE functionality will not be supported")
 
@@ -74,5 +74,5 @@ def trt_engine_builder(net_meta, data_type):
 
 
 def snpe_engine_builder(dlc_file, runtime):
-    return snpe.InferenceEngine(dlc_file, runtime)
+    return PySnpe.InferenceEngine(dlc_file, runtime)
 
