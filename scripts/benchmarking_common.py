@@ -10,7 +10,7 @@ except ImportError:
     print("[-] No SNPE module. SNPE functionality will not be supported")
 
 try:
-    import tensor_rt
+    import PyTensorRT
 except ImportError:
     print("[-] No TenorRT module. TRT functionality will not be supported")
 
@@ -64,7 +64,6 @@ def trt_engine_builder(net_meta, data_type):
         plan_path=net_meta['plan_filename'].format(data_type),
         input_node_name=net_meta['input_name'],
         output_node_name=net_meta['output_names'][0],
-        preprocess_fn_name=net_meta['preprocess_fn'].__name__,
         input_height=net_meta['input_height'],
         input_width=net_meta['input_width'],
         num_output_categories=net_meta['num_classes'],

@@ -9,8 +9,9 @@
 #include <stdexcept>
 
 #include <cuda_runtime.h>
-#include <opencv2/opencv.hpp>
 #include <NvInfer.h>
+#include <opencv2/opencv.hpp>
+#include <pybind11/numpy.h>
 
 #include "TRTEngine.hpp"
 
@@ -20,8 +21,6 @@ using namespace nvinfer1;
 
 namespace TensorRT
 {
-
-typedef void (*preprocess_fn_t)(float *input, size_t channels, size_t height, size_t width);
 
 class Logger : public ILogger
 {
@@ -34,7 +33,6 @@ class Logger : public ILogger
 NetConfig::NetConfig(std::string planPath,
                      std::string inputNodeName,
                      std::string outputNodeName,
-                     std::string preprocessFnName,
                      int inputHeight,
                      int inputWidth,
                      int numOutputCategories,
@@ -42,7 +40,6 @@ NetConfig::NetConfig(std::string planPath,
   : planPath(planPath)
   , inputNodeName(inputNodeName)
   , outputNodeName(outputNodeName)
-  , preprocessFnName(preprocessFnName)
   , inputHeight(inputHeight)
   , inputWidth(inputWidth)
   , numOutputCategories(numOutputCategories)
@@ -50,23 +47,13 @@ NetConfig::NetConfig(std::string planPath,
 {
 }
 
-preprocess_fn_t NetConfig::preprocessFn() const {
-  if (preprocessFnName == "preprocess_vgg")
-     return preprocessVgg;
-  else if (preprocessFnName == "preprocess_inception")
-     return preprocessInception;
-  else
-     throw std::runtime_error("Invalid preprocessing function name.");
-}
-
-float *imageToTensor(const cv::Mat & image)
+float *imageToTensor(pybind11::array_t<float, pybind11::array::c_style> image)
 {
-  const size_t height = image.rows;
-  const size_t width = image.cols;
-  const size_t channels = image.channels();
+  const size_t height = image.shape(0);
+  const size_t width = image.shape(1);
+  const size_t channels = image.shape(2);
   const size_t numel = height * width * channels;
 
-  const size_t stridesCv[3] = { width * channels, channels, 1 };
   const size_t strides[3] = { height * width, width, 1 };
 
   float * tensor;
@@ -78,41 +65,13 @@ float *imageToTensor(const cv::Mat & image)
     {
       for (size_t k = 0; k < channels; k++) 
       {
-        const size_t offsetCv = i * stridesCv[0] + j * stridesCv[1] + k * stridesCv[2];
         const size_t offset = k * strides[0] + i * strides[1] + j * strides[2];
-        tensor[offset] = (float) image.data[offsetCv];
+        tensor[offset] = *image.data(i, j, k);
       }
     }
   }
 
   return tensor;
-}
-
-
-void preprocessVgg(float * tensor, size_t channels, size_t height, size_t width)
-{
-  const size_t strides[3] = { height * width, width, 1 };
-  const float mean[3] = { 123.68, 116.78, 103.94 };
-
-  for (size_t i = 0; i < height; i++) 
-  {
-    for (size_t j = 0; j < width; j++) 
-    {
-      for (size_t k = 0; k < channels; k++) 
-      {
-        const size_t offset = k * strides[0] + i * strides[1] + j * strides[2];
-        tensor[offset] -= mean[k];
-      }
-    }
-  }
-}
-
-
-void preprocessInception(float * tensor, size_t channels, size_t height, size_t width)
-{
-  const size_t numel = channels * height * width;
-  for (size_t i = 0; i < numel; i++)
-    tensor[i] = 2.0 * (tensor[i] / 255.0 - 0.5);
 }
 
 TRTEngine::TRTEngine(const NetConfig &netConfig) 
@@ -133,8 +92,6 @@ TRTEngine::TRTEngine(const NetConfig &netConfig)
   outputBindingIndex = engine->getBindingIndex(netConfig.outputNodeName.c_str());
 
   inputSize = inputHeight * inputWidth * 3 * sizeof(float);
-
-  preprocessFn = netConfig.preprocessFn();
 }
 
 TRTEngine::~TRTEngine()
@@ -144,13 +101,9 @@ TRTEngine::~TRTEngine()
   runtime->destroy();
 }
 
-double TRTEngine::measureThroughput(std::string imagePath, int numRuns)
+double TRTEngine::measureThroughput(pybind11::array_t<float, pybind11::array::c_style> image, int numRuns)
 {
-  cv::Mat image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
-  cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);
-  cv::resize(image, image, cv::Size(inputWidth, inputHeight));
   float *input = imageToTensor(image);
-  preprocessFn(input, 3, inputHeight, inputWidth);
 
   float *inputDevice, *outputDevice, *output;
 
@@ -190,13 +143,9 @@ double TRTEngine::measureThroughput(std::string imagePath, int numRuns)
   return avgTime / numRuns;
 }
 
-std::vector<float> TRTEngine::execute(std::string imagePath)
+std::vector<float> TRTEngine::execute(pybind11::array_t<float, pybind11::array::c_style> image)
 {
-  cv::Mat image = cv::imread(imagePath, CV_LOAD_IMAGE_COLOR);
-  cv::cvtColor(image, image, cv::COLOR_BGR2RGB, 3);
-  cv::resize(image, image, cv::Size(inputWidth, inputHeight));
   float *input = imageToTensor(image);
-  preprocessFn(input, 3, inputHeight, inputWidth);
 
   // allocate memory on host / device for input / output
   float *inputDevice, *outputDevice, *output;

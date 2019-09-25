@@ -23,9 +23,9 @@ set(TENSORRT_HEADER_FILES include/TRTEngine.hpp)
 set(WRAPPER_SOURCE_FILES src/PyTensorRT.cpp)
 
 # Set nvcc build params and create build targets
-cuda_add_library(tensor_rt SHARED ${TENSORRT_SOURCE_FILES} ${TENSORRT_HEADER_FILES} ${WRAPPER_SOURCE_FILES} )
-target_link_libraries(tensor_rt ${OpenCV_LIBS} nvinfer nvparsers)
-set_target_properties(tensor_rt PROPERTIES SUFFIX ".so" PREFIX "")
+cuda_add_library(PyTensorRT SHARED ${TENSORRT_SOURCE_FILES} ${TENSORRT_HEADER_FILES} ${WRAPPER_SOURCE_FILES} )
+target_link_libraries(PyTensorRT ${OpenCV_LIBS} nvinfer nvparsers)
+set_target_properties(PyTensorRT PROPERTIES SUFFIX ".so" PREFIX "")
 
 add_executable(uffToPlan src/uffToPlan.cpp)
 target_link_libraries(uffToPlan nvinfer nvparsers)
