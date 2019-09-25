@@ -64,9 +64,10 @@ def load_test_set_data(net_meta, files, batch_size):
 
 def run_trt_accuracy_test(net_meta, data_type, files, batch_size):
     predictions = []
+    images = load_test_set_data(net_meta, files, 1)
     engine = trt_engine_builder(net_meta, data_type)
-    for img in files:
-        # TODO: fix execute interface to match inputs and outputs of TF session.run
+    for i, batch in enumerate(images):
+        img = batch[0]
         output = np.array(engine.execute(img)).reshape(1, -1)
         predictions.extend(output.argmax(axis=1))
 

@@ -51,7 +51,7 @@ def reverse_label_map_lookup(num_classes, label):
     return 1000
 
 def preprocess_vgg(image):
-    return np.array(image, dtype=np.float32) - np.array([123.68, 116.78, 103.94])
+    return np.array(image, dtype=np.float32) - np.array([123.68, 116.78, 103.94], dtype=np.float32)
 
 def postprocess_vgg(output):
     output = output.flatten()
