@@ -32,7 +32,7 @@ def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_ima
 
 
 def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TEST_IMAGE_PATH):
-    engine = trt_engine_builder(net_config, data_type)
+    engine = trt_engine_builder(net_meta, data_type)
     avg_latency = engine.measure_throughput(test_image, num_runs)
     return 1 / avg_latency
 

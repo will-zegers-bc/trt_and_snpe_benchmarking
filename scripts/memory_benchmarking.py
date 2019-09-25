@@ -47,7 +47,7 @@ def record_memory_usage(pid, rate_hz=5):
 
 
 def spin_trt_inferencing(net_meta, data_type, num_runs, test_image=TEST_IMAGE_PATH):
-    engine = trt_engine_builder(net_config, data_type)
+    engine = trt_engine_builder(net_meta, data_type)
     for i in range(num_runs):
         _ = engine.execute(test_image)
 

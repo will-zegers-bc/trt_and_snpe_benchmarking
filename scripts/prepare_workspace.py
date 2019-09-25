@@ -19,8 +19,8 @@ LABELS_URL='http://vision.stanford.edu/aditya86/ImageNetDogs/annotation.tar'
 
 SAMPLE_IMAGES={
     'gordon_setter': 'http://farm3.static.flickr.com/2017/2496831224_221cd963a2.jpg',
-    'golden_retriever': 'http://farm3.static.flickr.com/2582/4106642219_190bf0f817.jpg',
-    'lifeboat': 'http://farm4.static.flickr.com/3226/2719028129_9aa2e27675.jpg',
+    'lifeboat': 'http://farm3.static.flickr.com/2582/4106642219_190bf0f817.jpg',
+    'golden_retriever': 'http://farm4.static.flickr.com/3226/2719028129_9aa2e27675.jpg',
 }
 
 
@@ -101,6 +101,9 @@ if __name__ == '__main__':
         print('[+] Downloading Stanford Dogs dataset')
         download_and_extract(INPUTS_URL, IMAGES_DIR)
         download_and_extract(LABELS_URL, IMAGES_DIR)
+
+    if not os.path.exists(SAMPLES_DIR):
+        os.makedirs(SAMPLES_DIR)
 
     for name, url in SAMPLE_IMAGES.items():
         image_jpg = name + '.jpg'

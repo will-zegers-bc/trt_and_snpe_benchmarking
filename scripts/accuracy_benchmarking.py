@@ -28,7 +28,7 @@ def _collect_test_files(image_dir, annotation_dir, num_classes):
     logging.info("Collecting test files")
 
     file_paths, labels = [], []
-    for data_dir, label_dir in zip(map(sorted, map(os.listdir, (image_dir, annotation_dir)))):
+    for data_dir, label_dir in zip(*map(sorted, map(os.listdir, (image_dir, annotation_dir)))):
         assert data_dir == label_dir, "Data/label mismatch: data_dir: %s, label_dir: %s" % (data_dir, label_dir)
         data_path = os.path.join(image_dir, data_dir)
         label_path = os.path.join(annotation_dir, label_dir)
@@ -81,7 +81,7 @@ def run_tf_accuracy_test(net_meta, files, batch_size=1):
                 logging.info("Processing batch %s of %s" % (i+1, int(ceil(len(files) / batch_size))))
                 output = tf_sess.run([tf_output], feed_dict={
                     tf_input: batch
-                })[0]
+                })[0].reshape((batch_size, -1))
                 predictions.extend(output.argmax(axis=1))
 
         return predictions
