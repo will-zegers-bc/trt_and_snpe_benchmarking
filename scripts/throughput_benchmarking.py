@@ -19,11 +19,10 @@ from model_meta import NETS, SAMPLES_DIR
 TEST_IMAGE_PATH=os.path.join(SAMPLES_DIR, 'gordon_setter.jpg')
 
 
-def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_image='data/images/raw/{}/gordon_setter.raw'):
-    if not net_meta['snpe_support'][runtime]:
-        return float('nan')
+def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_image=TEST_IMAGE_PATH):
+    shape = net_meta['input_width'], net_meta['input_height']
+    image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
-    test_image = test_image.format(net_meta['input_width'])
     engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime)
               if runtime == 'dsp' else
               snpe_engine_builder(net_meta['dlc_filename'], runtime))

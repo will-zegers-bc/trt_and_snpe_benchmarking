@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <pybind11/numpy.h>
+
 #include "DlContainer/IDlContainer.hpp"
 #include "SNPE/SNPEFactory.hpp"
 #include "SNPE/SNPE.hpp"
@@ -19,6 +21,6 @@ class SNPEEngine
 public:
     SNPEEngine(const std::string&, const std::string&);
     std::vector<float> execute(const std::string&);
-    double measureLatency(const std::string&, int);
+    double measureLatency(pybind11::array_t<float, pybind11::array::c_style> input, int);
 };
 } // namespace SNPE

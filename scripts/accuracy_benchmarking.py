@@ -11,6 +11,7 @@ import numpy as np
 
 from benchmarking_common import (output_manager,
                                  preprocess_input_file,
+                                 snpe_engine_builder,
                                  tf_session_manager,
                                  trt_engine_builder)
 from model_meta import INPUTS_DIR, LABELS_DIR, NETS, reverse_label_map_lookup
@@ -62,7 +63,10 @@ def load_test_set_data(net_meta, files, batch_size):
     return image_data
 
 
-def run_trt_accuracy_test(net_meta, data_type, files, batch_size):
+def run_snpe_accuracy_test(net_meta, files, batch_size, runtime):
+
+
+def run_trt_accuracy_test(net_meta, files, batch_size, data_type):
     predictions = []
     images = load_test_set_data(net_meta, files, 1)
     engine = trt_engine_builder(net_meta, data_type)
@@ -107,8 +111,9 @@ def calculate_class_precision_and_recall(predictions, label, num_classes):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('net_type', type=str, choices=['tf', 'trt'])
+    parser.add_argument('net_type', type=str, choices=['snpe', 'tf', 'trt'])
     parser.add_argument('--data_type', type=str, choices=['float', 'half'])
+    parser.add_argument('--runtime', type=str, choices=['cpu', 'gpu', 'dsp'])
     parser.add_argument('--output_file', '-o', type=str, default=None)
     parser.add_argument('--test_set_size', '-s', type=int, default=1024)
     parser.add_argument('--batch_size', '-b', type=int, default=1)
@@ -133,7 +138,9 @@ if __name__ == '__main__':
             logging.info("Testing %s" % net_name)
             predictions = (run_tf_accuracy_test(net_meta, files, args.batch_size)
                            if args.net_type == 'tf' else
-                           run_trt_accuracy_test(net_meta, args.data_type, files, args.batch_size))
+                           run_trt_accuracy_test(net_meta, files, args.batch_size, args.data_type))
+                           if args.net_type == 'trt' else
+                           run_snpe_accuracy_test(net_meta, files, args.batch_size, args.runtime))
 
             accuracy = np.equal(predictions, labels).mean()
             precision, recall = calculate_class_precision_and_recall(predictions, labels, net_meta['num_classes'])

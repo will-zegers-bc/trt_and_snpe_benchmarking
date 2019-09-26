@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <chrono>
 
+#include <pybind11/numpy.h>
+
 #include "CheckRuntime.hpp"
 #include "LoadContainer.hpp"
 #include "SetBuilderOptions.hpp"
@@ -95,19 +97,19 @@ std::vector<float> SNPEEngine::execute(const std::string& inputFile)
     return output;
 }
 
-double SNPEEngine::measureLatency(const std::string& inputFile, int numRuns)
+double SNPEEngine::measureLatency(pybind11::array_t<float, pybind11::array::c_style> loadedFile, int numRuns)
 {
     std::vector<float> output;
     zdl::DlSystem::TensorMap outputTensorMap;
 
-    std::ifstream inputFileCheck(inputFile);
-    if (!inputFileCheck)
-    {
-        std::cerr << "Input .raw file not found" << std::endl;
-        throw std::runtime_error("Input file not found");
-    }
+    const auto &strList_opt = snpe->getInputTensorNames();
+    const auto &strList = *strList_opt;
+    const auto &inputDims_opt = snpe->getInputDimensions(strList.at(0));
+    const auto &inputShape = *inputDims_opt;
 
-    std::unique_ptr<zdl::DlSystem::ITensor> inputTensor = loadInputTensor(snpe, inputFile);
+    std::unique_ptr<zdl::DlSystem::ITensor> inputTensor =
+//        zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape);
+        zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(inputShape, reinterpret_cast<const unsigned char *>(loadedFile.data()), loadedFile.size() * sizeof(float));
 
     double avgTime = 0;
     for (int i = 0; i < numRuns; ++i)
