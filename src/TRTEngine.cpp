@@ -2,15 +2,12 @@
  * Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
  * Full license terms provided in LICENSE.md file.
  */
-#include <chrono>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <stdexcept>
 
 #include <cuda_runtime.h>
 #include <NvInfer.h>
-#include <opencv2/opencv.hpp>
 #include <pybind11/numpy.h>
 
 #include "TRTEngine.hpp"
@@ -21,14 +18,6 @@ using namespace nvinfer1;
 
 namespace TensorRT
 {
-
-class Logger : public ILogger
-{
-  void log(Severity severity, const char * msg) override
-  {
-    return;
-  }
-} gLogger;
 
 NetConfig::NetConfig(std::string planPath,
                      std::string inputNodeName,
@@ -76,15 +65,23 @@ float *imageToTensor(pybind11::array_t<float, pybind11::array::c_style> image)
   return tensor;
 }
 
+class Logger : public ILogger
+{
+  void log(Severity severity, const char * msg) override
+  {
+    return;
+  }
+} gLogger;
+
 TRTEngine::TRTEngine(const NetConfig &netConfig) 
   : numOutputCategories(netConfig.numOutputCategories)
-  , runtime(createInferRuntime(gLogger))
 {
   std::ifstream planFile(netConfig.planPath);
   std::stringstream planBuffer;
   planBuffer << planFile.rdbuf();
   std::string plan = planBuffer.str();
 
+  runtime = createInferRuntime(gLogger);
   engine = runtime->deserializeCudaEngine((void*)plan.data(), plan.size(), nullptr); 
   context = engine->createExecutionContext();
 

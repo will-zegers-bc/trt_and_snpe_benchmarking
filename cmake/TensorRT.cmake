@@ -1,5 +1,4 @@
 find_package(CUDA REQUIRED)
-find_package(OpenCV REQUIRED)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3)
@@ -24,8 +23,8 @@ set(WRAPPER_SOURCE_FILES src/PyTensorRT.cpp)
 
 # Set nvcc build params and create build targets
 cuda_add_library(PyTensorRT SHARED ${TENSORRT_SOURCE_FILES} ${TENSORRT_HEADER_FILES} ${WRAPPER_SOURCE_FILES} )
-target_link_libraries(PyTensorRT ${OpenCV_LIBS} nvinfer nvparsers)
+target_link_libraries(PyTensorRT nvinfer nvparsers)
 set_target_properties(PyTensorRT PROPERTIES SUFFIX ".so" PREFIX "")
 
-add_executable(uffToPlan src/uffToPlan.cpp)
+add_executable(uffToPlan src/UffToPlan.cpp)
 target_link_libraries(uffToPlan nvinfer nvparsers)
