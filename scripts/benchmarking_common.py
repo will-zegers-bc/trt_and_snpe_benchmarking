@@ -60,16 +60,17 @@ def tf_session_manager(net_meta):
 
 
 def trt_engine_builder(net_meta, data_type):
-    net_config = tensor_rt.NetConfig(
+    net_config = PyTensorRT.NetConfig(
         plan_path=net_meta['plan_filename'].format(data_type),
         input_node_name=net_meta['input_name'],
         output_node_name=net_meta['output_names'][0],
         input_height=net_meta['input_height'],
         input_width=net_meta['input_width'],
+        input_channels=3,
         num_output_categories=net_meta['num_classes'],
         max_batch_size=1)
 
-    return tensor_rt.InferenceEngine(net_config)
+    return PyTensorRT.InferenceEngine(net_config)
 
 
 def snpe_engine_builder(dlc_file, runtime):

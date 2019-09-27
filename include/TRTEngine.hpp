@@ -26,21 +26,22 @@ struct NetConfig
   std::string outputNodeName;
   int inputHeight;
   int inputWidth;
+  int inputChannels;
   int numOutputCategories;
   int maxBatchSize;
-  
-  NetConfig(std::string, std::string, std::string, int, int, int, int);
-
+  NetConfig(std::string, std::string, std::string, int, int, int, int, int);
 };
 
 class TRTEngine
 {
   int inputBindingIndex;
   int outputBindingIndex;
-  int inputWidth;
-  int inputHeight;
   int numOutputCategories;
   size_t inputSize;
+  float * inputDevice;
+  float * outputDevice;
+  float * bindings[2];
+  float * output;
 
   IRuntime* runtime;
   ICudaEngine* engine;
@@ -51,7 +52,6 @@ public:
   ~TRTEngine();
 
   std::vector<float> execute(pybind11::array_t<float, pybind11::array::c_style>);
-  double measureThroughput(pybind11::array_t<float, pybind11::array::c_style>, int);
 };
 
 float * imageToTensor(pybind11::array_t<float, pybind11::array::c_style>);

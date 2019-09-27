@@ -39,14 +39,20 @@ def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_ima
 
 
 def test_trt_average_throughput(net_meta, data_type, num_runs=50, test_image=TEST_IMAGE_PATH):
+    shape = net_meta['input_width'], net_meta['input_height']
+    image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
+
     engine = trt_engine_builder(net_meta, data_type)
-    avg_latency = engine.measure_throughput(test_image, num_runs)
-    return 1 / avg_latency
+    times = [0.] * (num_runs+1)
+    for i in range(num_runs + 1):
+        t0 = time.time()
+        engine.execute(image)
+        times[i] = time.time() - t0
+    return 1 / np.mean(times[1:])
 
 
-def test_average_throughput(net_meta, num_runs=50, test_image=TEST_IMAGE_PATH):
+def test_tf_average_throughput(net_meta, num_runs=50, test_image=TEST_IMAGE_PATH):
     with tf_session_manager(net_meta) as (tf_sess, tf_input, tf_output):
-
         shape = net_meta['input_width'], net_meta['input_height']
         image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
@@ -58,7 +64,7 @@ def test_average_throughput(net_meta, num_runs=50, test_image=TEST_IMAGE_PATH):
                 tf_input: image[None, ...]
             })[0]
             times[i] = time.time() - t0
-        return 1 / np.mean(times[1:]) # don't include first run
+        return 1 / np.mean(times[1:])  # don't include first run
 
 
 if __name__ == '__main__':
@@ -82,19 +88,19 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.INFO)
 
     with output_manager(args.output_file) as output:
-        output.write("net_name,throughput\n")
+        output.write("net_name,throughput")
         for net_name, net_meta in NETS.items():
             if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
                 logging.info("Skipping {}".format(net_name))
                 continue
     
             logging.info('Testing %s' % net_name)
-            avg_throughput = (test_average_throughput(net_meta, args.num_runs)
-                              if args.net_type == 'tf' else
-                              test_trt_average_throughput(net_meta, args.data_type, args.num_runs)
-                              if args.net_type == 'trt' else
-                              test_snpe_average_throughput(net_meta, args.runtime, args.num_runs))
+            throughput = (test_tf_average_throughput(net_meta, args.num_runs)
+                          if args.net_type == 'tf' else
+                          test_trt_average_throughput(net_meta, args.data_type, args.num_runs)
+                          if args.net_type == 'trt' else
+                          test_snpe_average_throughput(net_meta, args.runtime, args.num_runs))
     
-            csv_result = '{},{}\n'.format(net_name, avg_throughput)
+            csv_result = '{},{}\n'.format(net_name, throughput)
             output.write(csv_result)
             logging.info(csv_result)

@@ -26,7 +26,7 @@ class Logger : public ILogger
 {
   void log(Severity severity, const char * msg) override
   {
-      std::cout << msg << std::endl;
+    return;
   }
 } gLogger;
 
@@ -35,6 +35,7 @@ NetConfig::NetConfig(std::string planPath,
                      std::string outputNodeName,
                      int inputHeight,
                      int inputWidth,
+                     int inputChannels,
                      int numOutputCategories,
                      int maxBatchSize) 
   : planPath(planPath)
@@ -42,6 +43,7 @@ NetConfig::NetConfig(std::string planPath,
   , outputNodeName(outputNodeName)
   , inputHeight(inputHeight)
   , inputWidth(inputWidth)
+  , inputChannels(inputChannels)
   , numOutputCategories(numOutputCategories)
   , maxBatchSize(maxBatchSize)
 {
@@ -75,87 +77,43 @@ float *imageToTensor(pybind11::array_t<float, pybind11::array::c_style> image)
 }
 
 TRTEngine::TRTEngine(const NetConfig &netConfig) 
-  : inputWidth(netConfig.inputWidth)
-  , inputHeight(netConfig.inputHeight)
-  , numOutputCategories(netConfig.numOutputCategories)
+  : numOutputCategories(netConfig.numOutputCategories)
+  , runtime(createInferRuntime(gLogger))
 {
   std::ifstream planFile(netConfig.planPath);
   std::stringstream planBuffer;
   planBuffer << planFile.rdbuf();
   std::string plan = planBuffer.str();
-  runtime = createInferRuntime(gLogger);
-  engine = runtime->deserializeCudaEngine((void*)plan.data(),
-      plan.size(), nullptr);
 
+  engine = runtime->deserializeCudaEngine((void*)plan.data(), plan.size(), nullptr); 
   context = engine->createExecutionContext();
-  inputBindingIndex = engine->getBindingIndex(netConfig.inputNodeName.c_str());
-  outputBindingIndex = engine->getBindingIndex(netConfig.outputNodeName.c_str());
 
-  inputSize = inputHeight * inputWidth * 3 * sizeof(float);
+  // allocate memory on host / device for input / output
+  inputSize = netConfig.inputHeight * netConfig.inputWidth * netConfig.inputChannels * sizeof(float);
+  cudaMalloc(&inputDevice, inputSize);
+  cudaMalloc(&outputDevice, numOutputCategories * sizeof(float));
+  cudaHostAlloc(&output, numOutputCategories * sizeof(float), cudaHostAllocMapped);
+
+  inputBindingIndex = engine->getBindingIndex(netConfig.inputNodeName.c_str());
+  bindings[inputBindingIndex] = inputDevice;
+  outputBindingIndex = engine->getBindingIndex(netConfig.outputNodeName.c_str());
+  bindings[outputBindingIndex] = outputDevice;
 }
 
 TRTEngine::~TRTEngine()
 {
+  cudaFreeHost(output);
+  cudaFree(outputDevice);
+  cudaFree(inputDevice);
+
   context->destroy();  
   engine->destroy();
   runtime->destroy();
 }
 
-double TRTEngine::measureThroughput(pybind11::array_t<float, pybind11::array::c_style> image, int numRuns)
-{
-  float *input = imageToTensor(image);
-
-  float *inputDevice, *outputDevice, *output;
-
-  // allocate memory on host / device for input / output
-  cudaHostAlloc(&output, numOutputCategories * sizeof(float), cudaHostAllocMapped);
-  cudaMalloc(&inputDevice, inputSize);
-  cudaMalloc(&outputDevice, numOutputCategories * sizeof(float));
-
-  float *bindings[2];
-  bindings[inputBindingIndex] = inputDevice;
-  bindings[outputBindingIndex] = outputDevice;
-
-  double avgTime = 0;
-  for (int i = 0; i < numRuns+1; ++i)
-  {
-    auto t0 = std::chrono::steady_clock::now();
-
-    cudaMemcpy(inputDevice, input, inputSize, cudaMemcpyHostToDevice);
-    context->execute(1, (void**)bindings);
-    cudaMemcpy(output, outputDevice, numOutputCategories * sizeof(float), cudaMemcpyDeviceToHost);
-
-    std::vector<float> predictions(output, output + numOutputCategories);
-    std::chrono::duration<double> diff = std::chrono::steady_clock::now() - t0;
-
-    if (i != 0)
-    {
-      avgTime += diff.count();
-    }
-  }
-
-  cudaFree(inputDevice);
-  cudaFree(outputDevice);
-
-  cudaFreeHost(input);
-  cudaFreeHost(output);
-
-  return avgTime / numRuns;
-}
-
 std::vector<float> TRTEngine::execute(pybind11::array_t<float, pybind11::array::c_style> image)
 {
   float *input = imageToTensor(image);
-
-  // allocate memory on host / device for input / output
-  float *inputDevice, *outputDevice, *output;
-  cudaHostAlloc(&output, numOutputCategories * sizeof(float), cudaHostAllocMapped);
-  cudaMalloc(&inputDevice, inputSize);
-  cudaMalloc(&outputDevice, numOutputCategories * sizeof(float));
-
-  float *bindings[2];
-  bindings[inputBindingIndex] = inputDevice;
-  bindings[outputBindingIndex] = outputDevice;
 
   cudaMemcpy(inputDevice, input, inputSize, cudaMemcpyHostToDevice);
   context->execute(1, (void**)bindings);
@@ -163,13 +121,8 @@ std::vector<float> TRTEngine::execute(pybind11::array_t<float, pybind11::array::
 
   std::vector<float> predictions(output, output + numOutputCategories);
 
-  cudaFree(inputDevice);
-  cudaFree(outputDevice);
-
   cudaFreeHost(input);
-  cudaFreeHost(output);
 
-  // TODO: fix execute interface to match inputs and outputs of TF session.run
   return predictions;
 }
 } // namespace TensorRT
