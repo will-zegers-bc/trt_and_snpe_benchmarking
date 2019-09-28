@@ -5,53 +5,16 @@ import functools
 import logging
 from math import ceil
 import os
-from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from benchmarking_common import (output_manager,
+from benchmarking_common import (load_test_set_files_and_labels,
+                                 output_manager,
                                  preprocess_input_file,
                                  snpe_engine_builder,
                                  tf_session_manager,
                                  trt_engine_builder)
 from model_meta import INPUTS_DIR, LABELS_DIR, NETS, reverse_label_map_lookup
-
-
-def _get_directory_label(path, num_classes):
-    xml = os.listdir(path)[0]
-    xml_path = os.path.join(path, xml)
-
-    label_str = next(ET.parse(xml_path).iter('name')).text.replace('_', ' ')
-    return reverse_label_map_lookup(num_classes, label_str)
-
-
-def _collect_test_files(image_dir, annotation_dir, num_classes):
-    logging.info("Collecting test files")
-
-    file_paths, labels = [], []
-    for data_dir, label_dir in zip(*map(sorted, map(os.listdir, (image_dir, annotation_dir)))):
-        assert data_dir == label_dir, "Data/label mismatch: data_dir: %s, label_dir: %s" % (data_dir, label_dir)
-        data_path = os.path.join(image_dir, data_dir)
-        label_path = os.path.join(annotation_dir, label_dir)
-
-        label = _get_directory_label(label_path, num_classes)
-        dir_contents = os.listdir(data_path)
-
-        labels.extend([label] * len(dir_contents))
-        file_paths.extend([
-            os.path.join(data_path, file_) for file_ in dir_contents
-        ])
-
-    return file_paths, labels
-
-
-def load_test_set_files_and_labels(images_path, labels_path, size, num_classes, seed=42):
-    np.random.seed(seed)
-
-    files, labels = _collect_test_files(images_path, labels_path, num_classes)
-    selected = np.random.permutation(len(files))[:size]
-
-    return [files[s] for s in selected], [labels[s] for s in selected]
 
 
 def load_test_set_data(net_meta, files, batch_size):

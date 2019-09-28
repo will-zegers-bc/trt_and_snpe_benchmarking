@@ -3,14 +3,14 @@ import logging
 import os
 import subprocess
 
+from benchmarking_common import load_test_set_files_and_labels, preprocess_input_file
 from create_file_list import create_file_list
-from create_raws import RESIZE_METHOD_BILINEAR, convert_img
-from model_meta import DLCS_DIR, IMAGES_DIR, NETS, SAMPLES_DIR
+from model_meta import DLCS_DIR, IMAGES_DIR, NETS, INPUTS_DIR, LABELS_DIR
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--target_dsp', default=False, action='store_true')
+    parser.add_argument('--quantize', '-q', default=False, action='store_true')
     parser.add_argument('--use_enhanced_quantizer', default=False, action='store_true')
     parser.add_argument('--verbose', '-v', default=False, action='store_true')
     args = parser.parse_args()
@@ -43,16 +43,22 @@ if __name__ == '__main__':
                    '--allow_unconsumed_nodes']
             subprocess.call(cmd)
 
-        if args.target_dsp:
-            # TODO: need more quantization inputs
+        if args.quantize:
             raw_dir = os.path.join(IMAGES_DIR, 'raw', str(size))
             if not os.path.exists(raw_dir):
                 os.makedirs(raw_dir)
-                for img_file in os.listdir(SAMPLES_DIR):
-                    img_path = os.path.join(SAMPLES_DIR, img_file)
-                    raw_path = os.path.join(raw_dir, img_file)
+                image_files, _ = load_test_set_files_and_labels(INPUTS_DIR, 
+                                                                LABELS_DIR,
+                                                                20,
+                                                                net_meta['num_classes'],
+                                                                seed=555)
+                for path in image_files:
+                    filename = path[-path[::-1].find('/'):]
+                    raw_path = os.path.join(raw_dir, filename.replace('jpg', 'raw'))
 
-                    convert_img(img_path, raw_path, size, RESIZE_METHOD_BILINEAR)
+                    shape = net_meta['input_width'], net_meta['input_height']
+                    raw_image = preprocess_input_file(shape, net_meta['preprocess_fn'], path)
+                    raw_image.tofile(raw_path)
 
             txt_path = os.path.join(raw_dir, 'raw_list.txt')
             if not os.path.exists(txt_path):
