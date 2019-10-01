@@ -52,7 +52,9 @@ if __name__ == '__main__':
                     img_path = os.path.join(SAMPLES_DIR, img_file)
                     raw_path = os.path.join(raw_dir, img_file)
 
-                    convert_img(img_path, raw_path, size, RESIZE_METHOD_BILINEAR)
+#                    convert_img(img_path, raw_path, size, RESIZE_METHOD_BILINEAR)
+                    shape = net_meta['input_width'], net_meta['input_height']
+                    image = preprocess_input_file(shape, net_meta['preprocess_fn'], img_file, raw_path)
 
             txt_path = os.path.join(raw_dir, 'raw_list.txt')
             if not os.path.exists(txt_path):

@@ -15,27 +15,27 @@ except ImportError:
     print("[-] No TenorRT module. TRT functionality will not be supported")
 
 
-def preprocess_input_file(shape, preprocess_fn, img_file):
+def preprocess_input_file(shape, preprocess_fn, img_file, save_path=''):
     image = cv2.imread(img_file)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, shape)
 
+    if save_path:
+        cv2.imwrite(save_path, image)
     return preprocess_fn(image)
 
 
 @contextlib.contextmanager
-def output_manager(output_file=None):
+def output_manager(output_file=None, mode='w'):
     out = None
     try:
         if output_file is None:
             out = sys.stdout
         else:
-            out = open(output_file, 'w')
+            out = open(output_file, mode)
         yield out
-    except Exception as ex:
-        print(ex)
     finally:
-        if out is not None:
+        if out is not None and out is not sys.stdout:
             out.close()
 
 

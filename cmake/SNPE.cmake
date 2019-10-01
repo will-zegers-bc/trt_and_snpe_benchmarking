@@ -1,4 +1,4 @@
-set(SNPE_VERSION 1.25.1.310)
+set(SNPE_VERSION 1.30.0.480)
 set(SNPE_ROOT $ENV{HOME}/snpe-${SNPE_VERSION})
 
 include_directories(${SNPE_ROOT}/include/zdl)
