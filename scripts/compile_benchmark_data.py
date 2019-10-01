@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from argparse import ArgumentParser
 from collections import Iterable
 import os
 
@@ -13,31 +14,31 @@ import pandas as pd
 KB_TO_MB = 1. / 1024
 
 ACCURACY_DIR = 'data/accuracy'
-LATENCY_DIR = 'data/throughput'
+THROUGHPUT_DIR = 'data/throughput'
 MEMORY_DIR = 'data/memory'
 OUTPUT_CSV = 'data/benchmarks.csv'
 
-DATA_TYPES = ['tf', 'trt-float', 'trt-half']
+DATA_TYPES = ['tf', 'float', 'half']
 COLUMN_NAMES = ['net_name', 'data_type', 'throughput',
                 'peak_uss', 'peak_pss', 'peak_rss',
                 'accuracy', 'precision', 'recall']
 
 
-def build_dataframe(mem_dir=MEMORY_DIR, lat_dir=LATENCY_DIR, columns=COLUMN_NAMES, acc_dir=ACCURACY_DIR):
+def build_dataframe(platform, mem_dir=MEMORY_DIR, tp_dir=THROUGHPUT_DIR, acc_dir=ACCURACY_DIR, columns=COLUMN_NAMES):
     records = []
 
     for data_type in DATA_TYPES:
-        mem_df = pd.read_csv(os.path.join(mem_dir, data_type + '.csv'))
-        lat_df = pd.read_csv(os.path.join(lat_dir, data_type + '.csv'))
-        acc_df = pd.read_csv(os.path.join(acc_dir, data_type + '.csv'))
+        mem_df = pd.read_csv(os.path.join(mem_dir, platform, data_type + '.csv'))
+        tp_df = pd.read_csv(os.path.join(tp_dir, platform, data_type + '.csv'))
+        acc_df = pd.read_csv(os.path.join(acc_dir, platform, data_type + '.csv'))
 
-        assert set(mem_df.net_name.unique()) == set(lat_df.net_name.unique()) == set(acc_df.net_name.unique())
+        assert set(mem_df.net_name.unique()) == set(tp_df.net_name.unique()) == set(acc_df.net_name.unique())
         for net_name in mem_df.net_name.unique():
             rec = {
                 'net_name': net_name,
                 'data_type': data_type,
 
-                'throughput': lat_df.loc[lat_df['net_name'] == net_name, 'throughput'].values[0],
+                'throughput': tp_df.loc[tp_df['net_name'] == net_name, 'throughput'].values[0],
 
                 'peak_uss': int(KB_TO_MB * mem_df.loc[mem_df['net_name'] == net_name, 'peak_uss'].values[0]),
                 'peak_pss': int(KB_TO_MB * mem_df.loc[mem_df['net_name'] == net_name, 'peak_pss'].values[0]),
@@ -69,9 +70,10 @@ def plot(df, column_name, config):
             ind = np.arange(3)
             for i, (color, xgroup) in enumerate(zip(config['plot']['color'], config['xgroups'])):
                 subgroup = group.loc[group['data_type'] == xgroup]
-                ax.bar(ind+(i*0.25), subgroup[column_name].values[0], label=xgroup, width=0.25, color=color)
+                ax.bar(ind+(i*0.25), subgroup[column_name].values[0],  width=0.25, color=color)
         else:
             group.plot(kind='bar', x='data_type', y=column_name, ax=ax, **config['plot'])
+            ax.legend().remove()
         
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=0)
         ax.set_title(key)
@@ -88,13 +90,14 @@ def plot(df, column_name, config):
                 local_min = min(local_min)                                              
             ax.set_ylim(top=local_max, bottom=local_min)
 
-        if not config['plot'].get('label', ''):                                 
-            ax.legend().remove()                                                
-
     plt.show()
 
 
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('platform', type=str, choices=['nv_tx2', 'qc_sd845'])
+    args = parser.parse_args()
+
     if not os.path.isfile(OUTPUT_CSV):
         df = build_dataframe()
         df.to_csv(OUTPUT_CSV, index=False)
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     plt_config = {
         'axis_name': 'Memory Footprint (MB)',
         'scale': {'value': 'linear'},
-        'title': 'Maximum Memory Footprint',
+        'title': 'Peak Memory Usage',
         'xgroups': ('tf', 'trt-float', 'trt-half'),
         'plot': {
             'color': color,
@@ -116,7 +119,7 @@ if __name__ == '__main__':
     }
     plot(df, metrics, plt_config)
 
-   # Plot throughput
+    # Plot throughput
     plt_config = {
         'axis_name': 'Throughput (infc/s)',
         'scale': {'value': 'linear'},
@@ -128,10 +131,10 @@ if __name__ == '__main__':
     }
     plot(df, 'throughput', plt_config)
 
-   # Plot accuracy metrics
+    # Plot accuracy metrics
     metrics = ['accuracy', 'precision', 'recall']
     plt_config = {
-        'axis_name': 'Proportion correct',
+        'axis_name': 'Score',
         'scale': {'value': 'linear'},
         'title': 'Accuracy Metrics',
         'xgroups': ('tf', 'trt-float', 'trt-half'),

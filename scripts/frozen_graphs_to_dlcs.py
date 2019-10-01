@@ -36,10 +36,10 @@ if __name__ == '__main__':
         if not os.path.exists(net_meta['dlc_filename']):
             logging.info('[+] Converting ' + net_name +' to SNPE DLC format')
             cmd = ['snpe-tensorflow-to-dlc',
-                   '--graph', net_meta['frozen_graph_filename'],
+                   '--input_network', net_meta['frozen_graph_filename'],
                    '--input_dim', net_meta['input_name'], shape,
                    '--out_node', net_meta['output_names'][0],
-                   '--dlc', net_meta['dlc_filename'],
+                   '-o', net_meta['dlc_filename'],
                    '--allow_unconsumed_nodes']
             subprocess.call(cmd)
 
