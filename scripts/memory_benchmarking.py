@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     with output_manager(args.output_file) as output:
         output.write("net_name,peak_uss,peak_pss,peak_rss\n")
-        for net_name, net_meta in NETS.items():
+        for net_name, net_meta in sorted(NETS.items()):
             if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
                 logging.info('Skipping %s' % net_name)
                 continue

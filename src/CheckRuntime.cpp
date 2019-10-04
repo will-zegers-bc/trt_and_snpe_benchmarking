@@ -37,6 +37,10 @@ zdl::DlSystem::Runtime_t getRuntime(const std::string& runtimeString)
     {
         runtime = zdl::DlSystem::Runtime_t::CPU;
     }
+    else if (runtimeString.compare("g16") == 0)
+    {
+        runtime = zdl::DlSystem::Runtime_t::GPU_FLOAT16;
+    }
     else
     {
         throw std::runtime_error("Bad SNPE runtime string");

@@ -90,7 +90,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('net_type', type=str, choices=['snpe', 'tf', 'trt'])
     parser.add_argument('--data_type', type=str, choices=['float', 'half'])
-    parser.add_argument('--runtime', type=str, choices=['cpu', 'gpu', 'dsp'])
+    parser.add_argument('--runtime', type=str, choices=['cpu', 'gpu', 'dsp', 'g16'])
     parser.add_argument('--output_file', '-o', type=str, default=None)
     parser.add_argument('--test_set_size', '-s', type=int, default=1024)
     parser.add_argument('--batch_size', '-b', type=int, default=1)
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     with output_manager(args.output_file) as output:
         output.write('net_name,accuracy,precision,recall\n')
-        for net_name, net_meta in NETS.items():
+        for net_name, net_meta in sorted(NETS.items()):
             if 'exclude' in net_meta.keys() and net_meta['exclude'] is True:
                 logging.info("Skipping {}".format(net_name))
                 continue
