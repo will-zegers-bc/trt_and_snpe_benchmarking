@@ -18,6 +18,7 @@
 namespace SNPE {
 
 std::unique_ptr<zdl::SNPE::SNPE> setBuilderOptions(std::unique_ptr<zdl::DlContainer::IDlContainer> & container,
-                                                   zdl::DlSystem::Runtime_t runtime);
+                                                   zdl::DlSystem::Runtime_t runtime,
+                                                   zdl::DlSystem::PerformanceProfile_t performanceProfile);
 } // namespace SNPE
 #endif

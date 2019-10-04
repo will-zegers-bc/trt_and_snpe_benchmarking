@@ -11,12 +11,14 @@ endif()
 
 set(SNPE_SOURCE_FILES src/CheckRuntime.cpp
                       src/LoadContainer.cpp
+                      src/PerformanceProfile.cpp
                       src/SetBuilderOptions.cpp
                       src/SNPEEngine.cpp
 )
 
 set(SNPE_HEADER_FILES include/CheckRuntime.hpp
                       include/LoadContainer.hpp
+                      include/PerformanceProfile.hpp
                       include/SetBuilderOptions.hpp
                       include/SNPEEngine.hpp
 )

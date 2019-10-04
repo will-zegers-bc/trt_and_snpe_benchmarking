@@ -11,6 +11,6 @@ PYBIND11_MODULE(PySNPE, m)
     m.doc() = "SNPE Inference Engine";
 
     pybind11::class_<SNPE::SNPEEngine>(m, "InferenceEngine")
-        .def(pybind11::init<const std::string&, const std::string&>())
+        .def(pybind11::init<const std::string&, const std::string&, const::std::string&>())
         .def("execute", &SNPE::SNPEEngine::execute);
 }

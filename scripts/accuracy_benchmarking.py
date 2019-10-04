@@ -26,15 +26,15 @@ def load_test_set_data(net_meta, files, batch_size):
     return image_data
 
 
-def run_snpe_accuracy_test(net_meta, files, batch_size, runtime):
+def run_snpe_accuracy_test(net_meta, files, batch_size, runtime, performance_profile):
     if not net_meta['snpe_supported'][runtime]:
         return None
 
     predictions = []
     images = load_test_set_data(net_meta, files, 1)
-    engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime)
+    engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime, performance_profile)
               if runtime == 'dsp' else
-              snpe_engine_builder(net_meta['dlc_filename'], runtime))
+              snpe_engine_builder(net_meta['dlc_filename'], runtime, performance_profile))
     for i, batch in enumerate(images):
         img = batch[0]
         output = np.array(engine.execute(img)).reshape(1, -1)
@@ -94,6 +94,13 @@ if __name__ == '__main__':
     parser.add_argument('--output_file', '-o', type=str, default=None)
     parser.add_argument('--test_set_size', '-s', type=int, default=1024)
     parser.add_argument('--batch_size', '-b', type=int, default=1)
+    parser.add_argument('--performance_profile', type=str, default='default', choices=['balanced',
+                                                                                       'high_performance',
+                                                                                       'power_saver',
+                                                                                       'system_settings',
+                                                                                       'sustained_high_performance',
+                                                                                       'burst',
+                                                                                       'default'])
     parser.add_argument('--verbose', '-v', default=False, action='store_true')
     args = parser.parse_args()
 
@@ -117,7 +124,7 @@ if __name__ == '__main__':
                            if args.net_type == 'tf' else
                            run_trt_accuracy_test(net_meta, files, args.batch_size, args.data_type)
                            if args.net_type == 'trt' else
-                           run_snpe_accuracy_test(net_meta, files, args.batch_size, args.runtime))
+                           run_snpe_accuracy_test(net_meta, files, args.batch_size, args.runtime, args.performance_profile))
 
             if predictions is None:
                 csv_result = '{},nan,nan,nan\n'.format(net_name)

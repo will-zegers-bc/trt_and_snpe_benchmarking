@@ -104,7 +104,7 @@ def trt_engine_builder(net_meta, data_type):
     return PyTensorRT.InferenceEngine(net_config)
 
 
-def snpe_engine_builder(dlc_file, runtime):
+def snpe_engine_builder(dlc_file, runtime, performance_profile):
     import PySNPE
-    return PySNPE.InferenceEngine(dlc_file, runtime)
+    return PySNPE.InferenceEngine(dlc_file, runtime, performance_profile)
 

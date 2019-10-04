@@ -19,7 +19,7 @@ class SNPEEngine
     std::unique_ptr<zdl::DlSystem::ITensor> inputTensor;
 
 public:
-    SNPEEngine(const std::string&, const std::string&);
+    SNPEEngine(const std::string&, const std::string&, const std::string&);
     std::vector<float> execute(pybind11::array_t<float, pybind11::array::c_style> input);
 };
 } // namespace SNPE

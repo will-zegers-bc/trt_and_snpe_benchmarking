@@ -30,13 +30,16 @@
 
 #include "CheckRuntime.hpp"
 #include "LoadContainer.hpp"
+#include "PerformanceProfile.hpp"
 #include "SetBuilderOptions.hpp"
 #include "SNPE/SNPE.hpp"
 #include "SNPEEngine.hpp"
 
 namespace SNPE {
 
-SNPEEngine::SNPEEngine(const std::string& dlc, const std::string& runtimeString)
+SNPEEngine::SNPEEngine(const std::string& dlc,
+                       const std::string& runtimeString,
+                       const std::string& performanceProfileString)
 {
     std::ifstream dlcFileCheck(dlc);
     if (!dlcFileCheck)
@@ -51,7 +54,8 @@ SNPEEngine::SNPEEngine(const std::string& dlc, const std::string& runtimeString)
     }
 
     zdl::DlSystem::Runtime_t runtime = getRuntime(runtimeString);
-    snpe = setBuilderOptions(container, runtime);
+    zdl::DlSystem::PerformanceProfile_t performanceProfile = getPerformanceProfile(performanceProfileString);
+    snpe = setBuilderOptions(container, runtime, performanceProfile);
     if (snpe == nullptr)
     {
         throw std::runtime_error("Error while building SNPE object.");

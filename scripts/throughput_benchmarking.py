@@ -19,16 +19,16 @@ from model_meta import NETS, SAMPLES_DIR
 TEST_IMAGE_PATH=os.path.join(SAMPLES_DIR, 'gordon_setter.jpg')
 
 
-def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, test_image=TEST_IMAGE_PATH):
+def test_snpe_average_throughput(neta_meta, runtime='cpu', num_runs=50, performance_profile='default', test_image=TEST_IMAGE_PATH):
     if not net_meta['snpe_supported'][runtime]:
         return float('nan')
 
     shape = net_meta['input_width'], net_meta['input_height']
     image = preprocess_input_file(shape, net_meta['preprocess_fn'], test_image)
 
-    engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime)
+    engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime, performance_profile)
               if runtime == 'dsp' else
-              snpe_engine_builder(net_meta['dlc_filename'], runtime))
+              snpe_engine_builder(net_meta['dlc_filename'], runtime, performance_profile))
 
     times = [0.] * (num_runs+1)
     for i in range(num_runs + 1):
@@ -79,9 +79,16 @@ if __name__ == '__main__':
     parser.add_argument('--data_type', type=str, choices=['half', 'float'])
 
     # SNPE
-    parser.add_argument('--runtime', type=str, choices=['cpu', 'dsp', 'gpu'], default='cpu')
+    parser.add_argument('--runtime', type=str, default='cpu', choices=['cpu', 'dsp', 'gpu'])
+    parser.add_argument('--performance_profile', type=str, default='default', choices=['balanced',
+                                                                                       'high_performance',
+                                                                                       'power_saver',
+                                                                                       'system_settings',
+                                                                                       'sustained_high_performance',
+                                                                                       'burst',
+                                                                                       'default'])
 
-    args = parser.parse_args()
+args = parser.parse_args()
 
     if args.verbose:
         logging.basicConfig(level=logging.INFO)
@@ -99,7 +106,7 @@ if __name__ == '__main__':
                       if args.net_type == 'tf' else
                       test_trt_average_throughput(net_meta, args.data_type, args.num_runs)
                       if args.net_type == 'trt' else
-                      test_snpe_average_throughput(net_meta, args.runtime, args.num_runs))
+                      test_snpe_average_throughput(net_meta, args.runtime, args.num_runs, args.performance_profile))
     
         csv_result = '{},{}'.format(net_name, throughput)
         logging.info(csv_result)
