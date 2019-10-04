@@ -4,10 +4,6 @@ from argparse import ArgumentParser
 from collections import Iterable
 import os
 
-try:
-    import matplotlib.pyplot as plt
-except ImportError as ex:
-    print("[-] matplotlib not found. Plotting functionality diasbled")
 import numpy as np
 import pandas as pd
 
@@ -19,11 +15,26 @@ MEMORY_DIR = 'data/memory'
 OUTPUT_CSV = 'data/benchmarks-{}.csv'
 
 RUNTIMES = {
-    'nv_tx2': ('tf', 'float', 'half'),
-    'qc_sd845': ('cpu', 'gpu', 'g16', 'dsp'),
+    'nv_tx2': ('TF', 'Float32', 'Float16'),
+    'qc_sd845': ('TF', 'CPU', 'GPU', 'G16', 'DSP'),
 }
 COLUMN_NAMES = ['net_name', 'runtime', 'throughput', 'peak_uss', 'peak_pss',
                 'peak_rss', 'accuracy', 'precision', 'recall', 'platform']
+
+
+def _calculate_performance_gain(df):
+    gain = np.empty(len(df))                                                      
+    grouped = df.groupby('net_name')                                               
+
+    for key, indices in grouped.groups.items():                                    
+        print(key)
+        group = grouped.get_group(key)                                             
+        tf_lat = group.loc[group['runtime'] == 'TF', 'throughput'].values[0]  
+        lats = group['throughput'].values                                          
+        for i, lat in zip(indices, lats):                                          
+            gain[i] = lat / tf_lat                                                 
+                                                                                   
+    return gain
 
 
 def build_dataframe(platform, mem_dir=MEMORY_DIR, tp_dir=THROUGHPUT_DIR, acc_dir=ACCURACY_DIR, columns=COLUMN_NAMES):
@@ -34,10 +45,6 @@ def build_dataframe(platform, mem_dir=MEMORY_DIR, tp_dir=THROUGHPUT_DIR, acc_dir
         tp_df = pd.read_csv(os.path.join(tp_dir, platform, runtime + '.csv'))
         acc_df = pd.read_csv(os.path.join(acc_dir, platform, runtime + '.csv'))
 
-        print(runtime)
-        print(set(mem_df.net_name.unique()) == set(tp_df.net_name.unique()))
-        print(set(mem_df.net_name.unique()) == set(acc_df.net_name.unique()))
-        print(set(tp_df.net_name.unique()) == set(acc_df.net_name.unique()))
         assert set(mem_df.net_name.unique()) == set(tp_df.net_name.unique()) == set(acc_df.net_name.unique())
         for net_name in mem_df.net_name.unique():
             rec = {
@@ -57,48 +64,10 @@ def build_dataframe(platform, mem_dir=MEMORY_DIR, tp_dir=THROUGHPUT_DIR, acc_dir
                 'platform': platform,
             }
             records.append(rec)
-
-    return pd.DataFrame(records, columns=columns)
-
-
-def plot(df, column_name, config):
-    fig, axs = plt.subplots(figsize=(24, 13.5), nrows=3, ncols=6)
-    fig.tight_layout()
-    fig.subplots_adjust(left=0.05, top=0.925, bottom=0.025, hspace=0.20, wspace=0.35)
-    fig.suptitle(config['title'], fontsize=16)
-
-    global_max = df[column_name].max() * 1.1
-    if isinstance(global_max, Iterable):                                         
-        global_max = max(global_max)                                              
-
-    grouped = df.groupby('net_name')
-    for key, ax in zip(sorted(grouped.groups.keys()), axs.flatten()):
-        group = grouped.get_group(key)
-        if 'xgroups' in config.keys():
-            ind = np.arange(3)
-            for i, (color, xgroup) in enumerate(zip(config['plot']['color'], config['xgroups'])):
-                subgroup = group.loc[group['data_type'] == xgroup]
-                ax.bar(ind+(i*0.25), subgroup[column_name].values[0],  width=0.25, color=color, label='blue')
-        else:
-            group.plot(kind='bar', x='data_type', y=column_name, ax=ax, **config['plot'])
-            ax.legend().remove()
-        
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=0)
-        ax.set_title(key)
-        ax.set_xlabel('')
-        ax.set_ylabel(config['axis_name'])
-        ax.set_yscale(**config['scale'])
-        if config['ylims'] == 'global':
-            ax.set_ylim(top=global_max)
-        elif config['ylims'] == 'local_range':
-            local_max = group[column_name].max() * 1.02
-            local_min = group[column_name].min() * 0.98
-            if isinstance(local_max, Iterable):                                         
-                local_max = max(local_max)                                              
-                local_min = min(local_min)                                              
-            ax.set_ylim(top=local_max, bottom=local_min)
-
-    plt.show()
+            
+    df = pd.DataFrame(records, columns=columns)
+    df['gain'] = _calculate_performance_gain(df)
+    return df
 
 
 if __name__ == '__main__':
@@ -107,51 +76,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     output_csv = OUTPUT_CSV.format(args.platform)
-    if not os.path.isfile(output_csv):
-        df = build_dataframe(args.platform)
-        df.to_csv(output_csv, index=False)
-    else:
-        df = pd.read_csv(output_csv)
+    df = build_dataframe(args.platform)
+    df.to_csv(output_csv, index=False)
 
     print(df)
-#    color = ('tab:red', 'tab:green', 'tab:blue')
-    # Plot max memory usage
-#    metrics = ['peak_uss', 'peak_pss', 'peak_rss']
-#    plt_config = {
-#        'axis_name': 'Memory Footprint (MB)',
-#        'scale': {'value': 'linear'},
-#        'title': 'Peak Memory Usage',
-#        'xgroups': ('tf', 'trt-float', 'trt-half'),
-#        'plot': {
-#            'color': color,
-#        },
-#        'ylims': 'global',
-#    }
-#    plot(df, metrics, plt_config)
-#
-#    # Plot throughput
-#    plt_config = {
-#        'axis_name': 'Throughput (infc/s)',
-#        'scale': {'value': 'linear'},
-#        'title': 'Throughput (Inferences per Second)',
-#        'ylims': 'default',
-#        'plot': {
-#            'color': color[0],
-#        }
-#    }
-#    plot(df, 'throughput', plt_config)
-#
-#    # Plot accuracy metrics
-#    metrics = ['accuracy', 'precision', 'recall']
-#    plt_config = {
-#        'axis_name': 'Score',
-#        'scale': {'value': 'linear'},
-#        'title': 'Accuracy Metrics',
-#        'xgroups': ('tf', 'trt-float', 'trt-half'),
-#        'ylims': 'local_range',
-#        'plot': {
-#            'color': color,
-#            'width': 0.15
-#        },
-#    }
-#    plot(df, metrics, plt_config)
