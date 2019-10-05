@@ -20,9 +20,10 @@ std::unique_ptr<zdl::SNPE::SNPE> setBuilderOptions(std::unique_ptr<zdl::DlContai
 {
     std::unique_ptr<zdl::SNPE::SNPE> snpe;
     zdl::SNPE::SNPEBuilder snpeBuilder(container.get());
-    snpe = snpeBuilder.setOutputTensors({})
+    snpe = snpeBuilder.setOutputLayers({})
+       .setOutputTensors({})
        .setRuntimeProcessor(runtime)
-       .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::SUSTAINED_HIGH_PERFORMANCE)
+       .setPerformanceProfile(performanceProfile)
        .build();
     return snpe;
 }

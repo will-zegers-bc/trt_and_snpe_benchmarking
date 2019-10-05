@@ -74,6 +74,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_runs', '-n', type=int, default=20)
     parser.add_argument('--test_image', '-i', type=str, default=TEST_IMAGE_PATH)
     parser.add_argument('--verbose', '-v', default=False, action='store_true')
+    parser.add_argument('--runtime', 'r', default='cpu', choices=['cpu', 'gpu', 'g16', 'dsp'])
+    parser.add_argument('--performance_profile', type=str, default='default', choices=['balanced',
+                                                                                       'high_performance',
+                                                                                       'power_saver',
+                                                                                       'system_settings',
+                                                                                       'sustained_high_performance',
+                                                                                       'burst',
+                                                                                       'default'])
     args = parser.parse_args()
 
     if args.verbose:

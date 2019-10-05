@@ -27,9 +27,6 @@ def load_test_set_data(net_meta, files, batch_size):
 
 
 def run_snpe_accuracy_test(net_meta, files, batch_size, runtime, performance_profile):
-    if not net_meta['snpe_supported'][runtime]:
-        return None
-
     predictions = []
     images = load_test_set_data(net_meta, files, 1)
     engine = (snpe_engine_builder(net_meta['quantized_dlc_filename'], runtime, performance_profile)
@@ -90,7 +87,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('net_type', type=str, choices=['snpe', 'tf', 'trt'])
     parser.add_argument('--data_type', type=str, choices=['float', 'half'])
-    parser.add_argument('--runtime', type=str, choices=['cpu', 'gpu', 'dsp', 'g16'])
+    parser.add_argument('--runtime', type=str, choices=['cpu', 'gpu', 'dsp', 'g16'], default='cpu')
     parser.add_argument('--output_file', '-o', type=str, default=None)
     parser.add_argument('--test_set_size', '-s', type=int, default=1024)
     parser.add_argument('--batch_size', '-b', type=int, default=1)
